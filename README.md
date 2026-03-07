@@ -10,7 +10,7 @@ THIS APP IS IN BETA, expect lots of bugs.
 
 • Turn the plugin on and off
 
-• Switch controller mode between mirrored (acts as the same controller for both Wii U gamepads) and Seperate (The second gamepad pretends to be a Wii U pro controller)
+• Switch controller mode between mirrored (acts as the same controller for both Wii U gamepads) and Separate (The second gamepad pretends to be a Wii U pro controller)
 
 • Reload Wii U button to easily connect both of the gamepads
 
