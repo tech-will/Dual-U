@@ -1,9 +1,10 @@
 # Dual-U
+
 This Wii U plugin allows to connect 2 Wii U gamepads at the same time! It can stream sound and controls.
 
 Back in E3 2012, Nintendo announced that two Wii U gamepads can be connected to the console at the same time. This feature was never released, but it is still in the system files and can be used in homebrew applications. This plugin allows you to play some games with two gamepads!
 
-
+THIS APP IS IN BETA, expect lots of bugs.
 # Features
 • Pair the Wii U gamepads
 
