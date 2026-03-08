@@ -5,6 +5,7 @@
 #include <gx2/display.h>
 #include <nsysccr/cdc.h>
 #include <padscore/kpad.h>
+#include <padscore/wpad.h>
 #include <sysapp/launch.h>
 #include <vpad/input.h>
 #include <wups.h>
@@ -35,6 +36,7 @@ constexpr const char *kStorageKeyEnabled = "dual_drc_enabled";
 constexpr const char *kStorageKeyControllerMode = "dual_drc_controller_mode";
 constexpr const char *kStorageKeyEnableOnce = "dual_drc_enable_once";
 constexpr uint32_t kEmergencyDisableCombo = VPAD_BUTTON_STICK_L | VPAD_BUTTON_STICK_R;
+constexpr WPADChan kSyntheticControllerChannel = WPAD_CHAN_0;
 
 bool sPluginEnabled = kDefaultPluginEnabled;
 bool sExperimentalPatchEnabled = true;
@@ -144,6 +146,26 @@ bool IsMirroredMode() {
 
 bool IsSeparateMode() {
     return sControllerMode == CONTROLLER_MODE_SEPARATE_PRO;
+}
+
+bool IsSyntheticControllerChannel(WPADChan chan) {
+    return chan == kSyntheticControllerChannel;
+}
+
+void FillSyntheticWpadInfo(WPADInfo *outInfo) {
+    if (outInfo == nullptr) {
+        return;
+    }
+
+    outInfo->irEnabled = FALSE;
+    outInfo->speakerEnabled = TRUE;
+    outInfo->extensionAttached = TRUE;
+    outInfo->batteryLow = FALSE;
+    outInfo->speakerBufNearEmpty = FALSE;
+    outInfo->batteryLevel = 4;
+    outInfo->led = 0x02;
+    outInfo->protocol = 0;
+    outInfo->firmware = 0;
 }
 
 void ApplyDualDrcMode(bool enabled) {
@@ -439,11 +461,101 @@ WUPS_MUST_REPLACE_FOR_PROCESS(VPADRead,
                               VPADRead,
                               WUPS_FP_TARGET_PROCESS_GAME_AND_MENU);
 
+DECL_FUNCTION(WPADError, WPADProbe, WPADChan channel, WPADExtensionType *outExtensionType) {
+    WPADError result = real_WPADProbe(channel, outExtensionType);
+
+    if (!sPluginEnabled || !IsSeparateMode() || !IsSyntheticControllerChannel(channel)) {
+        return result;
+    }
+
+    if (outExtensionType != nullptr) {
+        *outExtensionType = WPAD_EXT_PRO_CONTROLLER;
+    }
+    return WPAD_ERROR_NONE;
+}
+WUPS_MUST_REPLACE_FOR_PROCESS(WPADProbe,
+                              WUPS_LOADER_LIBRARY_PADSCORE,
+                              WPADProbe,
+                              WUPS_FP_TARGET_PROCESS_GAME_AND_MENU);
+
+DECL_FUNCTION(WPADError, WPADGetInfo, WPADChan channel, WPADInfo *outInfo) {
+    WPADError result = real_WPADGetInfo(channel, outInfo);
+
+    if (!sPluginEnabled || !IsSeparateMode() || !IsSyntheticControllerChannel(channel)) {
+        return result;
+    }
+
+    FillSyntheticWpadInfo(outInfo);
+    return WPAD_ERROR_NONE;
+}
+WUPS_MUST_REPLACE_FOR_PROCESS(WPADGetInfo,
+                              WUPS_LOADER_LIBRARY_PADSCORE,
+                              WPADGetInfo,
+                              WUPS_FP_TARGET_PROCESS_GAME_AND_MENU);
+
+DECL_FUNCTION(WPADError, WPADGetInfoAsync, WPADChan channel, WPADInfo *outInfo, WPADCallback callback) {
+    WPADError result = real_WPADGetInfoAsync(channel, outInfo, callback);
+
+    if (!sPluginEnabled || !IsSeparateMode() || !IsSyntheticControllerChannel(channel)) {
+        return result;
+    }
+
+    FillSyntheticWpadInfo(outInfo);
+    return WPAD_ERROR_NONE;
+}
+WUPS_MUST_REPLACE_FOR_PROCESS(WPADGetInfoAsync,
+                              WUPS_LOADER_LIBRARY_PADSCORE,
+                              WPADGetInfoAsync,
+                              WUPS_FP_TARGET_PROCESS_GAME_AND_MENU);
+
+DECL_FUNCTION(WPADError, WPADSetDataFormat, WPADChan channel, WPADDataFormat format) {
+    WPADError result = real_WPADSetDataFormat(channel, format);
+
+    if (!sPluginEnabled || !IsSeparateMode() || !IsSyntheticControllerChannel(channel)) {
+        return result;
+    }
+
+    return WPAD_ERROR_NONE;
+}
+WUPS_MUST_REPLACE_FOR_PROCESS(WPADSetDataFormat,
+                              WUPS_LOADER_LIBRARY_PADSCORE,
+                              WPADSetDataFormat,
+                              WUPS_FP_TARGET_PROCESS_GAME_AND_MENU);
+
+DECL_FUNCTION(WPADDataFormat, WPADGetDataFormat, WPADChan channel) {
+    WPADDataFormat result = real_WPADGetDataFormat(channel);
+
+    if (!sPluginEnabled || !IsSeparateMode() || !IsSyntheticControllerChannel(channel)) {
+        return result;
+    }
+
+    return WPAD_FMT_PRO_CONTROLLER;
+}
+WUPS_MUST_REPLACE_FOR_PROCESS(WPADGetDataFormat,
+                              WUPS_LOADER_LIBRARY_PADSCORE,
+                              WPADGetDataFormat,
+                              WUPS_FP_TARGET_PROCESS_GAME_AND_MENU);
+
+DECL_FUNCTION(uint8_t, WPADGetBatteryLevel, WPADChan channel) {
+    uint8_t result = real_WPADGetBatteryLevel(channel);
+
+    if (!sPluginEnabled || !IsSeparateMode() || !IsSyntheticControllerChannel(channel)) {
+        return result;
+    }
+
+    // Avoid "0% battery" for the synthetic controller in game UIs.
+    return 4;
+}
+WUPS_MUST_REPLACE_FOR_PROCESS(WPADGetBatteryLevel,
+                              WUPS_LOADER_LIBRARY_PADSCORE,
+                              WPADGetBatteryLevel,
+                              WUPS_FP_TARGET_PROCESS_GAME_AND_MENU);
+
 DECL_FUNCTION(uint32_t, KPADReadEx, KPADChan chan, KPADStatus *data, uint32_t size, KPADError *error) {
     sKPADReadCalls++;
     uint32_t readCount = real_KPADReadEx(chan, data, size, error);
 
-    if (!sPluginEnabled || !IsSeparateMode() || chan != WPAD_CHAN_0 || data == nullptr || size == 0) {
+    if (!sPluginEnabled || !IsSeparateMode() || !IsSyntheticControllerChannel((WPADChan) chan) || data == nullptr || size == 0) {
         return readCount;
     }
     if (readCount > 0) {
@@ -483,7 +595,7 @@ DECL_FUNCTION(uint32_t, KPADRead, KPADChan chan, KPADStatus *data, uint32_t size
     sKPADReadCalls++;
     uint32_t readCount = real_KPADRead(chan, data, size);
 
-    if (!sPluginEnabled || !IsSeparateMode() || chan != WPAD_CHAN_0 || data == nullptr || size == 0) {
+    if (!sPluginEnabled || !IsSeparateMode() || !IsSyntheticControllerChannel((WPADChan) chan) || data == nullptr || size == 0) {
         return readCount;
     }
     if (readCount > 0) {

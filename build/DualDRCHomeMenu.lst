@@ -32,523 +32,541 @@
 02000898 00000478 T DrcPairing::getPinSymbols[abi:cxx11]() const
 02000d10 00000004 T on_init_wut_stdcpp()
 02000d14 0000007c t (anonymous namespace)::my_GX2GetSystemDRCMode()
-02000d90 0000001c t (anonymous namespace)::ReloadMenu_onInput(void*, WUPSConfigSimplePadData)
-02000dac 00000004 T on_init_wut_malloc()
-02000db0 00000004 T on_fini_wut_malloc()
-02000db4 00000014 T on_init_wut_sockets()
-02000dc8 00000014 T on_fini_wut_sockets()
-02000ddc 00000004 T on_init_wut_newlib()
-02000de0 00000004 T on_fini_wut_newlib()
-02000de4 00000004 T on_init_wut_thread()
-02000de8 00000040 T __init_wrapper()
-02000e38 00000004 T __fini_wrapper()
-02000e3c 00000038 T wups_init_config_functions(wups_loader_init_config_args_t)
-02000e74 00000034 T wups_init_button_combo_functions(wups_loader_init_button_combo_args_t_)
-02000ea8 00000004 T on_init_wut_devoptab()
-02000eac 00000004 T on_fini_wut_devoptab()
-02000eb0 00000034 T init_storage(wups_loader_init_storage_args_t_)
-02000ee4 00000008 T on_release_foreground()
-02000efc 0000006c t (anonymous namespace)::SaveSettingsToStorage()
-02000f68 0000000c t (anonymous namespace)::ControllerModeChanged(ConfigItemMultipleValues*, unsigned int)
-02000f74 000003d8 t (anonymous namespace)::BuildSyntheticKpadFromDrc1(KPADStatus*)
-0200135c 00000114 t (anonymous namespace)::my_KPADReadEx(WPADChan, KPADStatus*, unsigned int, KPADError*)
-02001470 00000004 t (anonymous namespace)::my_KPADReadExHomeMenu(WPADChan, KPADStatus*, unsigned int, KPADError*)
-02001474 000000f8 t (anonymous namespace)::my_KPADRead(WPADChan, KPADStatus*, unsigned int)
-0200156c 00000004 t (anonymous namespace)::my_KPADReadHomeMenu(WPADChan, KPADStatus*, unsigned int)
-02001570 00000114 t (anonymous namespace)::PairStatus_getCurrentValueDisplay(void*, char*, int)
-02001684 00000038 t (anonymous namespace)::PairNow_getCurrentValueSelectedDisplay(void*, char*, int)
-020016bc 00000038 t (anonymous namespace)::PairNow_getCurrentValueDisplay(void*, char*, int)
-020016f4 00000394 t (anonymous namespace)::my_VPADRead(VPADChan, VPADStatus*, unsigned int, VPADReadError*)
-02001a98 000000b0 t (anonymous namespace)::Pin_getCurrentValueDisplay(void*, char*, int)
-02001b48 00000004 t (anonymous namespace)::Pin_getCurrentValueSelectedDisplay(void*, char*, int)
-02001b4c 00000050 t (anonymous namespace)::my_GX2SetDRCEnable(int)
-02001b9c 00000070 t (anonymous namespace)::my_GX2CalcDRCSize(GX2DrcRenderMode, GX2SurfaceFormat, GX2BufferingMode, unsigned int*, unsigned int*)
-02001c0c 00000070 t (anonymous namespace)::my_GX2SetDRCBuffer(void*, unsigned int, GX2DrcRenderMode, GX2SurfaceFormat, GX2BufferingMode)
-02001c7c 000000a8 t (anonymous namespace)::ApplyDualDrcMode(bool) [clone .part.0]
-02001d54 00000014 T on_app_starting()
-02001d68 00000050 t (anonymous namespace)::PairNow_onInput(void*, WUPSConfigSimplePadData)
-02001db8 00000060 t (anonymous namespace)::ConfigMenuClosedCallback()
-02001e28 00000004 T on_fini_wut_stdcpp()
-02001e2c 00000038 t (anonymous namespace)::ReloadMenu_getCurrentValueDisplay(void*, char*, int)
-02001e64 00000038 t (anonymous namespace)::ReloadMenu_getCurrentValueSelectedDisplay(void*, char*, int)
-02001e9c 00000014 T on_acquired_foreground()
-02001eb0 00000068 T deinit_plugin()
-02001f28 0000007c t (anonymous namespace)::PluginEnabledChanged(ConfigItemBoolean*, bool)
-02001fb4 00000434 t (anonymous namespace)::ConfigMenuOpenedCallback(WUPSConfigCategoryHandle)
-020023e8 000001b8 T init_plugin()
-020025b0 00000114 t (anonymous namespace)::PairStatus_getCurrentValueSelectedDisplay(void*, char*, int)
-020026c4 00000024 t WUPSConfigItemBoolean_onCloseCallback(void*)
-020026e8 0000000c t WUPSConfigItemBoolean_restoreDefault(void*)
-020026f4 00000074 t WUPSConfigItemBoolean_getCurrentValueSelectedDisplay(void*, char*, int)
-02002768 00000074 t WUPSConfigItemBoolean_getCurrentValueDisplay(void*, char*, int)
-020027dc 00000068 t WUPSConfigItemBoolean_onInput(void*, WUPSConfigSimplePadData)
-02002844 00000044 t WUPSConfigItemBoolean_onDelete(void*)
-02002888 000001a0 T WUPSConfigItemBoolean_CreateEx
-02002a28 000000a4 T WUPSConfigItemBoolean_AddToCategoryEx
-02002acc 0000004c t WUPSConfigItemMultipleValues_onCloseCallback(void*)
-02002b18 0000005c t WUPSConfigItemMultipleValues_onInput(void*, WUPSConfigSimplePadData)
-02002b74 0000000c t WUPSConfigItemMultipleValues_restoreDefault(void*)
-02002b80 00000104 t WUPSConfigItemMultipleValues_getCurrentValueSelectedDisplay(void*, char*, int)
-02002c84 00000070 t WUPSConfigItemMultipleValues_getCurrentValueDisplay(void*, char*, int)
-02002cf4 00000088 t WUPSConfigItemMultipleValues_onDelete(void*)
-02002d7c 000002dc T WUPSConfigItemMultipleValues_Create
-02003058 000000a4 T WUPSConfigItemMultipleValues_AddToCategory
-020030fc 000000c4 T WUPSButtonComboAPI_InitInternal
-020031c0 000000b4 T WUPSConfigAPI_GetVersion
-02003294 00000220 T WUPSConfigAPI_InitLibrary_Internal
-020034d4 000000ac T WUPSConfigAPI_Init
-02003580 00000080 T WUPSConfigAPI_Category_CreateEx
-02003600 00000078 T WUPSConfigAPI_Category_Destroy
-02003678 0000008c T WUPSConfigAPI_Category_AddCategory
-02003704 0000008c T WUPSConfigAPI_Category_AddItem
-02003790 0000009c T WUPSConfigAPI_Item_CreateEx
-0200382c 00000078 T WUPSConfigAPI_Item_Destroy
-020038a4 0000000c T __wups_start
-020038c0 00000060 W __init_wut_socket
-02003920 0000005c W __fini_wut_socket
-0200397c 00000004 T __getreent
-02003980 00000004 W wut_set_thread_specific
-02003984 00000004 W wut_get_thread_specific
-02003988 0000015c W __assert_func
-02003af4 000000a4 T WUPSStorageAPI_InitInternal
-02003b98 00000034 T WUPSStorageAPI_SaveStorage
-02003bcc 00000048 T WUPSStorageAPI_StoreItem
-02003c14 0000005c T WUPSStorageAPI_GetItem
-02003c70 000000d0 t __wups_thread_cleanup(unsigned int*, void*)
-02003d60 00000178 T __wups_getreent()
-02003f18 000000a8 T wups_set_thread_specific
-02003fe0 000000c8 T wups_get_thread_specific
-020040c8 00000014 T __init_wut_newlib
-020040dc 00000004 T __fini_wut_newlib
-020040e0 00000078 T __fini_wut_sbrk_heap
-02004168 0000002c t __wut_cond_alarmcb
-020041b4 00000030 T __init_wut_thread
-020041f4 000000ac T __syscall_lock_acquire
-020042e0 000000ac T __syscall_lock_release
-020043cc 000000ac T __syscall_lock_acquire_recursive
-020044b8 000000ac T __syscall_lock_release_recursive
-020045a4 000000c4 T __syscall_cond_broadcast
-020046a8 000002cc T __syscall_cond_wait
-02004a14 00000004 T __init_wut_malloc
-02004a18 00000004 T __fini_wut_malloc
-02004a1c 0000006c T _malloc_r
-02004a88 00000018 T _free_r
-02004aa0 000000e0 T _realloc_r
-02004b90 0000009c T _calloc_r
-02004c2c 00000070 T _memalign_r
-02004c9c 000001bc T __init_wut_devoptab
-02004ea8 0000008c T __fini_wut_devoptab
-02004f54 000000a0 T __wut_fsa_dirclose
-02005024 000001ac T __wut_fsa_dirnext
-02005200 0000017c T __wut_fsa_diropen
-020053bc 000000a0 T __wut_fsa_dirreset
-0200548c 000000d4 T __wut_fsa_fstat
-02005590 0000009c T __wut_fsa_fsync
-0200565c 000000e0 T __wut_fsa_mkdir
-0200574c 000004cc T __wut_fsa_open
-02005c88 000001bc T __wut_fsa_read
-02005e74 00000114 T __wut_fsa_rename
-02005f98 000000c4 T __wut_fsa_rmdir
-0200606c 00000188 T __wut_fsa_seek
-02006234 00000118 T __wut_fsa_stat
-0200635c 00000168 T __wut_fsa_statvfs
-020064d4 000000c8 T __wut_fsa_ftruncate
-020065dc 000000c4 T __wut_fsa_unlink
-020066b0 00000040 T __wut_fsa_hashstring
-020066f0 00000368 T __wut_fsa_fixpath
-02006a58 0000007c T __wut_fsa_translate_stat_mode
-02006ad4 00000144 T __wut_fsa_translate_stat
-02006c18 00000028 T __wut_fsa_translate_error
-02006c40 000001d4 T __wut_fsa_write
-02006e44 0000011c T __wut_fsa_chdir
-02006f70 000000e0 T __wut_fsa_chmod
-02007060 0000009c T __wut_fsa_close
-0200712c 00000004 T operator delete(void*, unsigned int)
-02007130 00000098 t get_adjusted_ptr(std::type_info const*, std::type_info const*, void**)
-020071c8 0000013c t read_encoded_value_with_base(unsigned char, unsigned int, unsigned char const*, unsigned int*)
-02007304 00000068 t base_of_encoded_value(unsigned char, _Unwind_Context*)
-0200736c 00000120 t parse_lsda_header(_Unwind_Context*, unsigned char const*, lsda_header_info*)
-0200748c 00000138 t check_exception_spec(lsda_header_info*, std::type_info const*, void*, long)
-020075c4 000008b4 T __gxx_personality_v0
-02007e78 00000020 T __cxxabiv1::__terminate(void (*)())
-02007e98 00000018 T __cxxabiv1::__unexpected(void (*)())
-02007eb0 00000018 T std::get_terminate()
-02007ec8 00000018 T std::get_unexpected()
-02007ee0 00000080 t __gxx_exception_cleanup(_Unwind_Reason_Code, _Unwind_Exception*)
-02007f60 00000070 T __cxa_init_primary_exception
-02007fd0 00000068 T __cxa_throw
-02008038 00000080 T operator new(unsigned int)
-020080b8 0000000c T std::bad_alloc::what() const
-020080c4 00000010 T std::bad_alloc::~bad_alloc()
-020080c4 00000010 T std::bad_alloc::~bad_alloc()
-020080d4 00000040 T std::bad_alloc::~bad_alloc()
-02008114 00000004 T operator delete(void*)
-02008118 0000000c W __gnu_cxx::__concurrence_lock_error::what() const
-02008124 0000000c W __gnu_cxx::__concurrence_unlock_error::what() const
-02008130 00000010 W __gnu_cxx::__concurrence_lock_error::~__concurrence_lock_error()
-02008130 00000010 W __gnu_cxx::__concurrence_lock_error::~__concurrence_lock_error()
-02008140 00000040 W __gnu_cxx::__concurrence_lock_error::~__concurrence_lock_error()
-02008180 00000010 W __gnu_cxx::__concurrence_unlock_error::~__concurrence_unlock_error()
-02008180 00000010 W __gnu_cxx::__concurrence_unlock_error::~__concurrence_unlock_error()
-02008190 00000040 W __gnu_cxx::__concurrence_unlock_error::~__concurrence_unlock_error()
-020081d0 00000134 t (anonymous namespace)::pool::free(void*) [clone .constprop.0]
-02008304 000000fc t (anonymous namespace)::pool::allocate(unsigned int) [clone .constprop.0]
-02008400 00000068 T __cxa_allocate_exception
-02008468 00000030 T __cxa_free_exception
-02008498 000000c8 T __cxa_begin_catch
-02008560 00000004 T std::exception::~exception()
-02008560 00000004 T std::exception::~exception()
-02008564 00000068 t eh_globals_dtor(void*)
-020085cc 00000090 T __cxa_get_globals
-0200865c 00000018 T std::get_new_handler()
-02008674 00000010 T __cxxabiv1::__si_class_type_info::~__si_class_type_info()
-02008674 00000010 T __cxxabiv1::__si_class_type_info::~__si_class_type_info()
-02008684 00000040 T __cxxabiv1::__si_class_type_info::~__si_class_type_info()
-020086c4 000001b8 T __cxxabiv1::__si_class_type_info::__do_dyncast(int, __cxxabiv1::__class_type_info::__sub_kind, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__dyncast_result&) const
-0200887c 000000d4 T __cxxabiv1::__si_class_type_info::__do_find_public_src(int, void const*, __cxxabiv1::__class_type_info const*, void const*) const
-02008950 00000094 T __cxxabiv1::__si_class_type_info::__do_upcast(__cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__upcast_result&) const
-020089e4 00000004 T std::type_info::~type_info()
-020089e4 00000004 T std::type_info::~type_info()
-020089e8 00000008 T std::type_info::__is_pointer_p() const
-020089e8 00000008 T std::type_info::__is_function_p() const
-020089f0 00000008 T std::logic_error::what() const
-020089f0 00000008 T std::runtime_error::what() const
-020089f8 00000084 T std::logic_error::~logic_error()
-020089f8 00000084 T std::logic_error::~logic_error()
-02008a7c 00000084 T std::length_error::~length_error()
-02008a7c 00000084 T std::length_error::~length_error()
-02008b00 00000088 T std::logic_error::~logic_error()
-02008b88 00000088 T std::length_error::~length_error()
-02008c10 00000114 T std::logic_error::logic_error(char const*)
-02008c10 00000114 T std::logic_error::logic_error(char const*)
-02008d24 00000038 T std::length_error::length_error(char const*)
-02008d24 00000038 T std::length_error::length_error(char const*)
-02008d5c 000000dc W std::string::_Rep::_S_create(unsigned int, unsigned int, std::allocator<char> const&)
-02008e38 00000004 W std::string::_Rep::_M_destroy(std::allocator<char> const&)
-02008e3c 0000007c T __cxxabiv1::__class_type_info::__do_upcast(__cxxabiv1::__class_type_info const*, void**) const
-02008eb8 00000018 T __cxxabiv1::__class_type_info::__do_find_public_src(int, void const*, __cxxabiv1::__class_type_info const*, void const*) const
-02008ed0 00000010 T __cxxabiv1::__class_type_info::~__class_type_info()
-02008ed0 00000010 T __cxxabiv1::__class_type_info::~__class_type_info()
-02008ee0 00000040 T __cxxabiv1::__class_type_info::~__class_type_info()
-02008f20 00000090 T __cxxabiv1::__class_type_info::__do_upcast(__cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__upcast_result&) const
-02008fb0 00000100 T __cxxabiv1::__class_type_info::__do_catch(std::type_info const*, void**, unsigned int) const
-020090b0 00000134 T __cxxabiv1::__class_type_info::__do_dyncast(int, __cxxabiv1::__class_type_info::__sub_kind, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__dyncast_result&) const
-020091e4 00000428 T __divdi3
-0200960c 000003cc T __udivdi3
-020099d8 000001d0 t init_dwarf_reg_size_table
-02009ba8 000001fc t uw_install_context_1
-02009da4 0000018c t read_encoded_value
-02009f30 00000870 t execute_stack_op
-0200a7a0 00000390 t uw_update_context_1
-0200ab30 00000954 t execute_cfa_program_specialized
-0200b484 000009bc t execute_cfa_program_generic
-0200be40 000004d8 t uw_frame_state_for
-0200c318 000002d0 t uw_init_context_1
-0200c5e8 000001cc t _Unwind_RaiseException_Phase2
-0200c7b4 000001f0 t _Unwind_ForcedUnwind_Phase2
-0200c9a4 00000064 T _Unwind_SetGR
-0200ca08 00000014 T _Unwind_GetIPInfo
-0200ca1c 00000008 T _Unwind_SetIP
-0200ca24 00000008 T _Unwind_GetLanguageSpecificData
-0200ca2c 00000008 T _Unwind_GetRegionStart
-0200ca34 00000008 T _Unwind_GetDataRelBase
-0200ca3c 00000008 T _Unwind_GetTextRelBase
-0200ca44 00000004 t _Unwind_DebugHook
-0200ca48 0000038c T _Unwind_RaiseException
-0200cdd4 000001dc T _Unwind_Resume
-0200cfb0 0000001c T _Unwind_DeleteException
-0200cfcc 00000020 t fde_unencoded_compare
-0200cfec 00000074 t fde_unencoded_extract
-0200d060 00000110 t frame_downheap
-0200d170 0000013c t read_encoded_value_with_base
-0200d2ac 000002a4 t fde_radixsort
-0200d550 00000118 t __deregister_frame_info_bases.part.0
-0200d668 00000158 t get_cie_encoding
-0200d7c0 000000fc t fde_mixed_encoding_extract
-0200d8bc 0000020c t classify_object_over_fdes.constprop.0
-0200dac8 00000108 t fde_single_encoding_extract
-0200dbd0 000000d0 t fde_single_encoding_compare
-0200dca0 00000150 t fde_mixed_encoding_compare
-0200ddf0 000002c0 t add_fdes.isra.0
-0200e0b0 00000360 t linear_search_fdes
-0200e410 000006e4 t search_object
-0200eaf4 00000088 T __register_frame_info
-0200eb7c 00000020 T __deregister_frame_info
-0200eb9c 0000024c T _Unwind_Find_FDE
-0200ede8 000001b8 T chdir
-0200efa0 0000027c T _concatenate_path
-0200f21c 00000008 t null_write
-0200f224 00000018 T setDefaultDevice
-0200f23c 00000108 T FindDevice
-0200f344 00000040 T RemoveDevice
-0200f384 000000f4 T AddDevice
-0200f478 00000080 T pthread_mutex_lock
-0200f4f8 00000080 T pthread_mutex_unlock
-0200f578 000000fc T pthread_once
-0200f674 0000002c T pthread_key_create
-0200f6a0 0000001c T pthread_setspecific
-0200f6bc 0000001c T pthread_getspecific
-0200f6d8 0000001c T pthread_key_delete
-0200f6f4 00000014 T __libc_lock_acquire
-0200f708 00000014 T __libc_lock_release
-0200f71c 00000014 T __libc_lock_acquire_recursive
-0200f730 00000014 T __libc_lock_release_recursive
-0200f744 0000001c T __libc_cond_broadcast
-0200f760 0000001c T __libc_cond_wait
-0200f77c 00000038 T getenv
-0200f7b4 0000014c T memcpy
-0200f900 00000080 T strlen
-0200f980 0000008c T strcpy
-0200fa0c 00000040 T memalign
-0200fa4c 00000130 T snprintf
-0200fb7c 00000148 T memchr
-0200fcc4 00000218 t _strtoul_l.isra.0
-0200fedc 00000064 T strtoul
-0200ff40 00000154 T strchr
-02010094 00000124 T memcmp
-020101b8 00000180 T memset
-02010338 00000104 T strncpy
-0201043c 0000009c T strcmp
-020104d8 00000058 T malloc
-02010530 00000030 T free
-02010560 00000078 T strrchr
-020105d8 0000013c T _findenv_r
-02010714 00000254 T memmove
-02010968 00000030 T strdup
-02010998 0000010c T _reclaim_reent
-02010aa4 000007bc t get_arg
-02011260 000039f8 T _svfprintf_r
-02014c58 000000c0 T strnlen
-02014d18 000000c8 T strncmp
-02014de0 00000090 T frexp
-02014e70 0000000c T __env_lock
-02014e7c 0000000c T __env_unlock
-02014e88 00000070 T _strdup_r
-02014ef8 00000104 T _wcrtomb_r
-02014ffc 0000010c T __ssprint_r
-02015108 0000004c T __locale_mb_cur_max
-02015154 00000340 t quorem
-02015494 00001720 T _dtoa_r
-02016bb4 00000010 T _wcsrtombs_r
-02016bc4 0000004c T _localeconv_r
-02016c10 00000194 T __ssputs_r
-02016da4 00000108 T __utf8_wctomb
-02016eac 000001e4 T _wcsnrtombs_l
-02017090 000000d8 T _wcsnrtombs_r
-02017168 000000f4 T _Balloc
-0201725c 00000024 T _Bfree
-02017280 00000174 T __multadd
-020173f4 00000098 T __hi0bits
-0201748c 0000010c T __lo0bits
-02017598 00000108 T __i2b
-020176a0 00000338 T __multiply
-020179d8 0000019c T __pow5mult
-02017b74 0000026c T __lshift
-02017de0 000000dc T __mcmp
-02017ebc 00000314 T __mdiff
-020181d0 00000194 T __d2b
-02018364 00000604 T __utf8_mbtowc
-02018968 00000384 T __umoddi3
-02018cec 00000058 T _restgpr_14_x
-02018cf0 00000054 T _restgpr_15_x
-02018cf4 00000050 T _restgpr_16_x
-02018cf8 0000004c T _restgpr_17_x
-02018cfc 00000048 T _restgpr_18_x
-02018d00 00000044 T _restgpr_19_x
-02018d04 00000040 T _restgpr_20_x
-02018d08 0000003c T _restgpr_21_x
-02018d0c 00000038 T _restgpr_22_x
-02018d10 00000034 T _restgpr_23_x
-02018d14 00000030 T _restgpr_24_x
-02018d18 0000002c T _restgpr_25_x
-02018d1c 00000028 T _restgpr_26_x
-02018d20 00000024 T _restgpr_27_x
-02018d24 00000020 T _restgpr_28_x
-02018d28 0000001c T _restgpr_29_x
-02018d2c 00000018 T _restgpr_30_x
-02018d30 00000014 T _restgpr_31_x
-02018d44 t __do_global_ctors_aux
-02018d94 T __fini
-100008cc d .LC2
-100009d0 00000010 d DrcPairing::getPinSymbols[abi:cxx11]() const::pinSymbols
-10000ab8 00000080 d __wut_fsa_devoptab
-10000b38 00000042 d CSWTCH.24
-10000bb0 0000000d V typeinfo name for std::bad_alloc
-10000bc0 0000000c V typeinfo for std::bad_alloc
-10000bcc 00000014 V vtable for std::bad_alloc
-10000be0 00000027 V typeinfo name for __gnu_cxx::__concurrence_lock_error
-10000c08 0000000c V typeinfo for __gnu_cxx::__concurrence_lock_error
-10000c14 00000029 V typeinfo name for __gnu_cxx::__concurrence_unlock_error
-10000c40 0000000c V typeinfo for __gnu_cxx::__concurrence_unlock_error
-10000c4c 00000014 V vtable for __gnu_cxx::__concurrence_lock_error
-10000c60 00000014 V vtable for __gnu_cxx::__concurrence_unlock_error
-10000c74 0000000d V typeinfo name for std::exception
-10000c84 00000020 V typeinfo name for __cxxabiv1::__forced_unwind
-10000ca4 00000024 V typeinfo name for __cxxabiv1::__foreign_exception
-10000cc8 00000025 V typeinfo name for __cxxabiv1::__si_class_type_info
-10000cf0 0000000c V typeinfo for __cxxabiv1::__si_class_type_info
-10000cfc 0000002c V vtable for __cxxabiv1::__si_class_type_info
-10000d28 0000000d V typeinfo name for std::type_info
-10000d38 00000010 V typeinfo name for std::logic_error
-10000d48 0000000c V typeinfo for std::logic_error
-10000d54 00000011 V typeinfo name for std::length_error
-10000d68 0000000c V typeinfo for std::length_error
-10000d74 00000014 V vtable for std::logic_error
-10000d88 00000014 V vtable for std::length_error
-10000d9c 00000022 V typeinfo name for __cxxabiv1::__class_type_info
-10000dc0 0000000c V typeinfo for __cxxabiv1::__class_type_info
-10000dcc 0000002c V vtable for __cxxabiv1::__class_type_info
-10001294 00000008 d terminator.0
-1000129c 00000080 D dotab_stdnull
-10001574 00000010 d zeroes.0
-10001584 00000010 d blanks.1
-100015e8 00000101 D _ctype_
-100016ec 0000006c D __action_table
-10001758 0000006c D __state_table
-100017c4 00000100 D __chclass
-100018c4 0000000c d p05.0
-100018d0 00000028 D __mprec_bigtens
-100018f8 000000c8 D __mprec_tens
-10001a44 d __CTOR_LIST__
-10001a48 D __CTOR_LIST__
-10001a54 D __CTOR_END__
-10001a54 d __CTOR_END__
-10001a58 d __DTOR_LIST__
-10001a5c D __DTOR_LIST__
-10001a68 D __DTOR_END__
-10001a6c D __EH_FRAME_BEGIN__
-10001a6c d __EH_FRAME_BEGIN__
-10005ae8 D __EH_FRAME_END__
-10005ae8 d __FRAME_END__
-10005af0 00000001 d (anonymous namespace)::sExperimentalPatchEnabled
-10005af4 00000004 d (anonymous namespace)::sControllerMode
-10005af8 00000010 d (anonymous namespace)::sControllerModeValues
-10005b08 00000004 d (anonymous namespace)::real_GX2GetSystemDRCMode
-10005b0c 00000004 d (anonymous namespace)::real_KPADReadEx
-10005b10 00000004 d (anonymous namespace)::real_KPADRead
-10005b14 00000004 d (anonymous namespace)::real_VPADRead
-10005b18 00000004 d (anonymous namespace)::real_GX2SetDRCEnable
-10005b1c 00000004 d (anonymous namespace)::real_GX2CalcDRCSize
-10005b20 00000004 d (anonymous namespace)::real_GX2SetDRCBuffer
-10005b24 00000004 d sConfigPluginIdentifier
-10005b28 00000004 d sConfigAPIVersion
-10005b2c 00000028 d __internal_functions
-10005b54 00000400 d _current_working_directory
-10005f54 0000008c D devoptab_list
-10005fe0 00000004 d defaultDevice
-10005fe8 00000200 D _impure_data
-100061e8 00000254 D __global_locale
-1000643c 00000004 D __cxxabiv1::__unexpected_handler
-10006440 00000008 V typeinfo for std::exception
-10006448 00000008 V typeinfo for __cxxabiv1::__forced_unwind
-10006450 00000008 V typeinfo for __cxxabiv1::__foreign_exception
-10006458 00000004 D __cxxabiv1::__terminate_handler
-1000645c 00000008 V typeinfo for std::type_info
-10006464 00000004 D _impure_ptr
-10006468 00000004 D environ
-10006470 00000004 B __wut_exit
-10006474 00000001 B __eh_globals_init::_S_init
-10006475 b completed.2
-10006478 b dtor_idx.1
-1000647c b object.0
-10006494 00000004 b (anonymous namespace)::sGX2HookCalls
-10006498 00000001 b (anonymous namespace)::sPluginEnabled
-10006499 00000001 b (anonymous namespace)::sReloadMenuRequested
-1000649c 00000004 b (anonymous namespace)::sVPADDrc1ReadAttempts
-100064a0 00000004 b (anonymous namespace)::sVPADDrc1NoSamples
-100064a4 00000004 b (anonymous namespace)::sVPADDrc1Invalid
-100064a8 00000004 b (anonymous namespace)::sVPADDrc1Busy
-100064ac 00000004 b (anonymous namespace)::sVPADDrc1Uninitialized
-100064b0 00000004 b (anonymous namespace)::sVPADDrc1OtherError
-100064b4 00000004 b (anonymous namespace)::sVPADDrc1ReadSuccess
-100064b8 00000004 b (anonymous namespace)::sLastSeparateHold
-100064bc 00000004 b (anonymous namespace)::sKPADReadCalls
-100064c0 00000004 b (anonymous namespace)::sKPADInjectFailures
-100064c4 00000004 b (anonymous namespace)::sKPADInjectedSamples
-100064c8 0000000c b (anonymous namespace)::sPairing
-100064d4 00000004 b (anonymous namespace)::sVPADHookCalls
-100064d8 00000001 b (anonymous namespace)::sEmergencyDisableComboLatched
-100064dc 00000004 b (anonymous namespace)::sVPADMergedCalls
-100064e0 00000004 b (anonymous namespace)::sGX2SetDRCEnableCalls
-100064e4 00000004 b (anonymous namespace)::sGX2CalcDRCSizeCalls
-100064e8 00000004 b (anonymous namespace)::sGX2SetDRCBufferCalls
-100064ec 00000038 b __internal_functions
-10006524 00000001 b sConfigLibInitDone
-10006528 00000004 b sAPIMenuGetStatus
-1000652c 00000004 b sAPIItemDestroy
-10006530 00000004 b sAPIItemCreateEx
-10006534 00000004 b sAPICategoryAddItem
-10006538 00000004 b sAPICategoryAddCategory
-1000653c 00000004 b sAPICategoryDestroy
-10006540 00000004 b sAPICategoryCreateEx
-10006544 00000004 b sAPIInitEx
-10006548 00000004 b sAPIGetVersion
-1000654c 00000004 b sModuleHandle
-10006550 00000004 b __wut_socket_devoptab_added
-10006554 00000004 b sHeapSize
-10006558 00000004 b sHeapMaxSize
-1000655c 00000004 b sHeapBase
-10006560 00000004 b sHeapHandle
-10006570 00000010 b sMallocSpinLock
-10006580 00000010 b sSyncSpinLock
-10006590 000003b8 B __wut_fsa_device_data
-10006948 00000018 b (anonymous namespace)::emergency_pool
-10006960 00000004 b init
-10006964 00000008 b (anonymous namespace)::eh_globals
-1000696c 00000004 b (anonymous namespace)::__new_handler
-10006970 00000010 V std::string::_Rep::_S_empty_rep_storage
-10006980 00000004 b once_regsizes.0
-10006984 00000070 b dwarf_reg_size_table
-100069f4 0000000c b object_mutex
-10006a00 00000004 b seen_objects
-10006a04 00000004 b unseen_objects
-10006a08 00000400 b temp_cwd
-10006e08 00000004 b __pthread_once_cv
-10006e0c 00000004 b __pthread_once_lock
-10006e10 00000150 B __sf
-10006f60 00000008 b __env_recursive_mutex
-10006f68 00000004 b initial_env
-10006f6c 0000008c R wups_meta_info_linking_order
-10006ff8 0000001e R wups_meta_storage_id
-10007018 0000000c R wups_meta_license
-10007024 00000011 R wups_meta_author
-10007038 0000000d R wups_meta_version
-10007048 00000030 R wups_meta_description
-10007078 0000003c R wups_meta_info_dump
-100070b4 00000007 R wups_meta_plugin_name
-100070bc 00000024 R wups_meta_buildtimestamp
-100070e0 0000000b R wups_meta_wups
-100070ec 0000000c R wups_meta_name
-100070f8 00000024 R (anonymous namespace)::wups_load_my_KPADReadHomeMenu
-1000711c 00000024 R (anonymous namespace)::wups_load_my_KPADRead
-10007140 00000024 R (anonymous namespace)::wups_load_my_KPADReadExHomeMenu
-10007164 00000024 R (anonymous namespace)::wups_load_my_KPADReadEx
-10007188 00000024 R (anonymous namespace)::wups_load_my_VPADRead
-100071ac 00000024 R (anonymous namespace)::wups_load_my_GX2SetDRCBuffer
-100071d0 00000024 R (anonymous namespace)::wups_load_my_GX2CalcDRCSize
-100071f4 00000024 R (anonymous namespace)::wups_load_my_GX2SetDRCEnable
-10007218 00000024 R (anonymous namespace)::wups_load_my_GX2GetSystemDRCMode
-1000723c 00000008 R wups_hooks_deinit_plugin
-10007244 00000008 R wups_hooks_on_release_foreground
-1000724c 00000008 R wups_hooks_on_acquired_foreground
-10007254 00000008 R wups_hooks_on_app_starting
-1000725c 00000008 R wups_hooks_init_plugin
-10007264 00000008 R wups_hooks_init_storage
-1000726c 00000008 R wups_hooks_on_fini_wut_devoptab
-10007274 00000008 R wups_hooks_on_init_wut_devoptab
-1000727c 00000008 R wups_hooks_wups_init_button_combo_functions
-10007284 00000008 R wups_hooks_wups_init_config_functions
-1000728c 00000008 R wups_hooks___fini_wrapper
-10007294 00000008 R wups_hooks___init_wrapper
-1000729c 00000008 R wups_hooks_on_init_wut_thread
-100072a4 00000008 R wups_hooks_on_fini_wut_stdcpp
-100072ac 00000008 R wups_hooks_on_init_wut_stdcpp
-100072b4 00000008 R wups_hooks_on_fini_wut_newlib
-100072bc 00000008 R wups_hooks_on_init_wut_newlib
-100072c4 00000008 R wups_hooks_on_fini_wut_sockets
-100072cc 00000008 R wups_hooks_on_init_wut_sockets
-100072d4 00000008 R wups_hooks_on_fini_wut_malloc
-100072dc 00000008 R wups_hooks_on_init_wut_malloc
+02000d90 00000080 t (anonymous namespace)::my_WPADProbe(WPADChan, WPADExtensionType*)
+02000e10 0000007c t (anonymous namespace)::my_WPADSetDataFormat(WPADChan, WPADDataFormat)
+02000e8c 00000078 t (anonymous namespace)::my_WPADGetDataFormat(WPADChan)
+02000f04 00000080 t (anonymous namespace)::my_WPADGetBatteryLevel(WPADChan)
+02000f84 0000001c t (anonymous namespace)::ReloadMenu_onInput(void*, WUPSConfigSimplePadData)
+02000fa0 00000004 T on_init_wut_malloc()
+02000fa4 00000004 T on_fini_wut_malloc()
+02000fa8 00000014 T on_init_wut_sockets()
+02000fbc 00000014 T on_fini_wut_sockets()
+02000fd0 00000004 T on_init_wut_newlib()
+02000fd4 00000004 T on_fini_wut_newlib()
+02000fd8 00000004 T on_init_wut_thread()
+02000fdc 00000040 T __init_wrapper()
+0200102c 00000004 T __fini_wrapper()
+02001030 00000038 T wups_init_config_functions(wups_loader_init_config_args_t)
+02001068 00000034 T wups_init_button_combo_functions(wups_loader_init_button_combo_args_t_)
+0200109c 00000004 T on_init_wut_devoptab()
+020010a0 00000004 T on_fini_wut_devoptab()
+020010a4 00000034 T init_storage(wups_loader_init_storage_args_t_)
+020010d8 00000008 T on_release_foreground()
+020010f0 0000006c t (anonymous namespace)::SaveSettingsToStorage()
+0200115c 0000000c t (anonymous namespace)::ControllerModeChanged(ConfigItemMultipleValues*, unsigned int)
+02001168 000003d8 t (anonymous namespace)::BuildSyntheticKpadFromDrc1(KPADStatus*)
+02001550 00000114 t (anonymous namespace)::my_KPADReadEx(WPADChan, KPADStatus*, unsigned int, KPADError*)
+02001664 00000004 t (anonymous namespace)::my_KPADReadExHomeMenu(WPADChan, KPADStatus*, unsigned int, KPADError*)
+02001668 000000f8 t (anonymous namespace)::my_KPADRead(WPADChan, KPADStatus*, unsigned int)
+02001760 00000004 t (anonymous namespace)::my_KPADReadHomeMenu(WPADChan, KPADStatus*, unsigned int)
+02001764 00000114 t (anonymous namespace)::PairStatus_getCurrentValueDisplay(void*, char*, int)
+02001878 00000038 t (anonymous namespace)::PairNow_getCurrentValueSelectedDisplay(void*, char*, int)
+020018b0 00000038 t (anonymous namespace)::PairNow_getCurrentValueDisplay(void*, char*, int)
+020018e8 00000394 t (anonymous namespace)::my_VPADRead(VPADChan, VPADStatus*, unsigned int, VPADReadError*)
+02001c8c 000000b0 t (anonymous namespace)::Pin_getCurrentValueDisplay(void*, char*, int)
+02001d3c 00000004 t (anonymous namespace)::Pin_getCurrentValueSelectedDisplay(void*, char*, int)
+02001d40 00000050 t (anonymous namespace)::my_GX2SetDRCEnable(int)
+02001d90 00000070 t (anonymous namespace)::my_GX2CalcDRCSize(GX2DrcRenderMode, GX2SurfaceFormat, GX2BufferingMode, unsigned int*, unsigned int*)
+02001e00 00000070 t (anonymous namespace)::my_GX2SetDRCBuffer(void*, unsigned int, GX2DrcRenderMode, GX2SurfaceFormat, GX2BufferingMode)
+02001e70 00000094 t (anonymous namespace)::my_WPADGetInfoAsync(WPADChan, WPADInfo*, void (*)(WPADChan, WPADError))
+02001f04 000000a8 t (anonymous namespace)::ApplyDualDrcMode(bool) [clone .part.0]
+02001fdc 00000014 T on_app_starting()
+02001ff0 00000050 t (anonymous namespace)::PairNow_onInput(void*, WUPSConfigSimplePadData)
+02002040 00000060 t (anonymous namespace)::ConfigMenuClosedCallback()
+020020b0 00000004 T on_fini_wut_stdcpp()
+020020b4 00000038 t (anonymous namespace)::ReloadMenu_getCurrentValueDisplay(void*, char*, int)
+020020ec 00000038 t (anonymous namespace)::ReloadMenu_getCurrentValueSelectedDisplay(void*, char*, int)
+02002124 00000094 t (anonymous namespace)::my_WPADGetInfo(WPADChan, WPADInfo*)
+020021b8 00000014 T on_acquired_foreground()
+020021cc 00000068 T deinit_plugin()
+02002244 0000007c t (anonymous namespace)::PluginEnabledChanged(ConfigItemBoolean*, bool)
+020022d0 00000434 t (anonymous namespace)::ConfigMenuOpenedCallback(WUPSConfigCategoryHandle)
+02002704 000001b8 T init_plugin()
+020028cc 00000114 t (anonymous namespace)::PairStatus_getCurrentValueSelectedDisplay(void*, char*, int)
+020029e0 00000024 t WUPSConfigItemBoolean_onCloseCallback(void*)
+02002a04 0000000c t WUPSConfigItemBoolean_restoreDefault(void*)
+02002a10 00000074 t WUPSConfigItemBoolean_getCurrentValueSelectedDisplay(void*, char*, int)
+02002a84 00000074 t WUPSConfigItemBoolean_getCurrentValueDisplay(void*, char*, int)
+02002af8 00000068 t WUPSConfigItemBoolean_onInput(void*, WUPSConfigSimplePadData)
+02002b60 00000044 t WUPSConfigItemBoolean_onDelete(void*)
+02002ba4 000001a0 T WUPSConfigItemBoolean_CreateEx
+02002d44 000000a4 T WUPSConfigItemBoolean_AddToCategoryEx
+02002de8 0000004c t WUPSConfigItemMultipleValues_onCloseCallback(void*)
+02002e34 0000005c t WUPSConfigItemMultipleValues_onInput(void*, WUPSConfigSimplePadData)
+02002e90 0000000c t WUPSConfigItemMultipleValues_restoreDefault(void*)
+02002e9c 00000104 t WUPSConfigItemMultipleValues_getCurrentValueSelectedDisplay(void*, char*, int)
+02002fa0 00000070 t WUPSConfigItemMultipleValues_getCurrentValueDisplay(void*, char*, int)
+02003010 00000088 t WUPSConfigItemMultipleValues_onDelete(void*)
+02003098 000002dc T WUPSConfigItemMultipleValues_Create
+02003374 000000a4 T WUPSConfigItemMultipleValues_AddToCategory
+02003418 000000c4 T WUPSButtonComboAPI_InitInternal
+020034dc 000000b4 T WUPSConfigAPI_GetVersion
+020035b0 00000220 T WUPSConfigAPI_InitLibrary_Internal
+020037f0 000000ac T WUPSConfigAPI_Init
+0200389c 00000080 T WUPSConfigAPI_Category_CreateEx
+0200391c 00000078 T WUPSConfigAPI_Category_Destroy
+02003994 0000008c T WUPSConfigAPI_Category_AddCategory
+02003a20 0000008c T WUPSConfigAPI_Category_AddItem
+02003aac 0000009c T WUPSConfigAPI_Item_CreateEx
+02003b48 00000078 T WUPSConfigAPI_Item_Destroy
+02003bc0 0000000c T __wups_start
+02003bdc 00000060 W __init_wut_socket
+02003c3c 0000005c W __fini_wut_socket
+02003c98 00000004 T __getreent
+02003c9c 00000004 W wut_set_thread_specific
+02003ca0 00000004 W wut_get_thread_specific
+02003ca4 0000015c W __assert_func
+02003e10 000000a4 T WUPSStorageAPI_InitInternal
+02003eb4 00000034 T WUPSStorageAPI_SaveStorage
+02003ee8 00000048 T WUPSStorageAPI_StoreItem
+02003f30 0000005c T WUPSStorageAPI_GetItem
+02003f8c 000000d0 t __wups_thread_cleanup(unsigned int*, void*)
+0200407c 00000178 T __wups_getreent()
+02004234 000000a8 T wups_set_thread_specific
+020042fc 000000c8 T wups_get_thread_specific
+020043e4 00000014 T __init_wut_newlib
+020043f8 00000004 T __fini_wut_newlib
+020043fc 00000078 T __fini_wut_sbrk_heap
+02004484 0000002c t __wut_cond_alarmcb
+020044d0 00000030 T __init_wut_thread
+02004510 000000ac T __syscall_lock_acquire
+020045fc 000000ac T __syscall_lock_release
+020046e8 000000ac T __syscall_lock_acquire_recursive
+020047d4 000000ac T __syscall_lock_release_recursive
+020048c0 000000c4 T __syscall_cond_broadcast
+020049c4 000002cc T __syscall_cond_wait
+02004d30 00000004 T __init_wut_malloc
+02004d34 00000004 T __fini_wut_malloc
+02004d38 0000006c T _malloc_r
+02004da4 00000018 T _free_r
+02004dbc 000000e0 T _realloc_r
+02004eac 0000009c T _calloc_r
+02004f48 00000070 T _memalign_r
+02004fb8 000001bc T __init_wut_devoptab
+020051c4 0000008c T __fini_wut_devoptab
+02005270 000000a0 T __wut_fsa_dirclose
+02005340 000001ac T __wut_fsa_dirnext
+0200551c 0000017c T __wut_fsa_diropen
+020056d8 000000a0 T __wut_fsa_dirreset
+020057a8 000000d4 T __wut_fsa_fstat
+020058ac 0000009c T __wut_fsa_fsync
+02005978 000000e0 T __wut_fsa_mkdir
+02005a68 000004cc T __wut_fsa_open
+02005fa4 000001bc T __wut_fsa_read
+02006190 00000114 T __wut_fsa_rename
+020062b4 000000c4 T __wut_fsa_rmdir
+02006388 00000188 T __wut_fsa_seek
+02006550 00000118 T __wut_fsa_stat
+02006678 00000168 T __wut_fsa_statvfs
+020067f0 000000c8 T __wut_fsa_ftruncate
+020068f8 000000c4 T __wut_fsa_unlink
+020069cc 00000040 T __wut_fsa_hashstring
+02006a0c 00000368 T __wut_fsa_fixpath
+02006d74 0000007c T __wut_fsa_translate_stat_mode
+02006df0 00000144 T __wut_fsa_translate_stat
+02006f34 00000028 T __wut_fsa_translate_error
+02006f5c 000001d4 T __wut_fsa_write
+02007160 0000011c T __wut_fsa_chdir
+0200728c 000000e0 T __wut_fsa_chmod
+0200737c 0000009c T __wut_fsa_close
+02007448 00000004 T operator delete(void*, unsigned int)
+0200744c 00000098 t get_adjusted_ptr(std::type_info const*, std::type_info const*, void**)
+020074e4 0000013c t read_encoded_value_with_base(unsigned char, unsigned int, unsigned char const*, unsigned int*)
+02007620 00000068 t base_of_encoded_value(unsigned char, _Unwind_Context*)
+02007688 00000120 t parse_lsda_header(_Unwind_Context*, unsigned char const*, lsda_header_info*)
+020077a8 00000138 t check_exception_spec(lsda_header_info*, std::type_info const*, void*, long)
+020078e0 000008b4 T __gxx_personality_v0
+02008194 00000020 T __cxxabiv1::__terminate(void (*)())
+020081b4 00000018 T __cxxabiv1::__unexpected(void (*)())
+020081cc 00000018 T std::get_terminate()
+020081e4 00000018 T std::get_unexpected()
+020081fc 00000080 t __gxx_exception_cleanup(_Unwind_Reason_Code, _Unwind_Exception*)
+0200827c 00000070 T __cxa_init_primary_exception
+020082ec 00000068 T __cxa_throw
+02008354 00000080 T operator new(unsigned int)
+020083d4 0000000c T std::bad_alloc::what() const
+020083e0 00000010 T std::bad_alloc::~bad_alloc()
+020083e0 00000010 T std::bad_alloc::~bad_alloc()
+020083f0 00000040 T std::bad_alloc::~bad_alloc()
+02008430 00000004 T operator delete(void*)
+02008434 0000000c W __gnu_cxx::__concurrence_lock_error::what() const
+02008440 0000000c W __gnu_cxx::__concurrence_unlock_error::what() const
+0200844c 00000010 W __gnu_cxx::__concurrence_lock_error::~__concurrence_lock_error()
+0200844c 00000010 W __gnu_cxx::__concurrence_lock_error::~__concurrence_lock_error()
+0200845c 00000040 W __gnu_cxx::__concurrence_lock_error::~__concurrence_lock_error()
+0200849c 00000010 W __gnu_cxx::__concurrence_unlock_error::~__concurrence_unlock_error()
+0200849c 00000010 W __gnu_cxx::__concurrence_unlock_error::~__concurrence_unlock_error()
+020084ac 00000040 W __gnu_cxx::__concurrence_unlock_error::~__concurrence_unlock_error()
+020084ec 00000134 t (anonymous namespace)::pool::free(void*) [clone .constprop.0]
+02008620 000000fc t (anonymous namespace)::pool::allocate(unsigned int) [clone .constprop.0]
+0200871c 00000068 T __cxa_allocate_exception
+02008784 00000030 T __cxa_free_exception
+020087b4 000000c8 T __cxa_begin_catch
+0200887c 00000004 T std::exception::~exception()
+0200887c 00000004 T std::exception::~exception()
+02008880 00000068 t eh_globals_dtor(void*)
+020088e8 00000090 T __cxa_get_globals
+02008978 00000018 T std::get_new_handler()
+02008990 00000010 T __cxxabiv1::__si_class_type_info::~__si_class_type_info()
+02008990 00000010 T __cxxabiv1::__si_class_type_info::~__si_class_type_info()
+020089a0 00000040 T __cxxabiv1::__si_class_type_info::~__si_class_type_info()
+020089e0 000001b8 T __cxxabiv1::__si_class_type_info::__do_dyncast(int, __cxxabiv1::__class_type_info::__sub_kind, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__dyncast_result&) const
+02008b98 000000d4 T __cxxabiv1::__si_class_type_info::__do_find_public_src(int, void const*, __cxxabiv1::__class_type_info const*, void const*) const
+02008c6c 00000094 T __cxxabiv1::__si_class_type_info::__do_upcast(__cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__upcast_result&) const
+02008d00 00000004 T std::type_info::~type_info()
+02008d00 00000004 T std::type_info::~type_info()
+02008d04 00000008 T std::type_info::__is_pointer_p() const
+02008d04 00000008 T std::type_info::__is_function_p() const
+02008d0c 00000008 T std::logic_error::what() const
+02008d0c 00000008 T std::runtime_error::what() const
+02008d14 00000084 T std::logic_error::~logic_error()
+02008d14 00000084 T std::logic_error::~logic_error()
+02008d98 00000084 T std::length_error::~length_error()
+02008d98 00000084 T std::length_error::~length_error()
+02008e1c 00000088 T std::logic_error::~logic_error()
+02008ea4 00000088 T std::length_error::~length_error()
+02008f2c 00000114 T std::logic_error::logic_error(char const*)
+02008f2c 00000114 T std::logic_error::logic_error(char const*)
+02009040 00000038 T std::length_error::length_error(char const*)
+02009040 00000038 T std::length_error::length_error(char const*)
+02009078 000000dc W std::string::_Rep::_S_create(unsigned int, unsigned int, std::allocator<char> const&)
+02009154 00000004 W std::string::_Rep::_M_destroy(std::allocator<char> const&)
+02009158 0000007c T __cxxabiv1::__class_type_info::__do_upcast(__cxxabiv1::__class_type_info const*, void**) const
+020091d4 00000018 T __cxxabiv1::__class_type_info::__do_find_public_src(int, void const*, __cxxabiv1::__class_type_info const*, void const*) const
+020091ec 00000010 T __cxxabiv1::__class_type_info::~__class_type_info()
+020091ec 00000010 T __cxxabiv1::__class_type_info::~__class_type_info()
+020091fc 00000040 T __cxxabiv1::__class_type_info::~__class_type_info()
+0200923c 00000090 T __cxxabiv1::__class_type_info::__do_upcast(__cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__upcast_result&) const
+020092cc 00000100 T __cxxabiv1::__class_type_info::__do_catch(std::type_info const*, void**, unsigned int) const
+020093cc 00000134 T __cxxabiv1::__class_type_info::__do_dyncast(int, __cxxabiv1::__class_type_info::__sub_kind, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__dyncast_result&) const
+02009500 00000428 T __divdi3
+02009928 000003cc T __udivdi3
+02009cf4 000001d0 t init_dwarf_reg_size_table
+02009ec4 000001fc t uw_install_context_1
+0200a0c0 0000018c t read_encoded_value
+0200a24c 00000870 t execute_stack_op
+0200aabc 00000390 t uw_update_context_1
+0200ae4c 00000954 t execute_cfa_program_specialized
+0200b7a0 000009bc t execute_cfa_program_generic
+0200c15c 000004d8 t uw_frame_state_for
+0200c634 000002d0 t uw_init_context_1
+0200c904 000001cc t _Unwind_RaiseException_Phase2
+0200cad0 000001f0 t _Unwind_ForcedUnwind_Phase2
+0200ccc0 00000064 T _Unwind_SetGR
+0200cd24 00000014 T _Unwind_GetIPInfo
+0200cd38 00000008 T _Unwind_SetIP
+0200cd40 00000008 T _Unwind_GetLanguageSpecificData
+0200cd48 00000008 T _Unwind_GetRegionStart
+0200cd50 00000008 T _Unwind_GetDataRelBase
+0200cd58 00000008 T _Unwind_GetTextRelBase
+0200cd60 00000004 t _Unwind_DebugHook
+0200cd64 0000038c T _Unwind_RaiseException
+0200d0f0 000001dc T _Unwind_Resume
+0200d2cc 0000001c T _Unwind_DeleteException
+0200d2e8 00000020 t fde_unencoded_compare
+0200d308 00000074 t fde_unencoded_extract
+0200d37c 00000110 t frame_downheap
+0200d48c 0000013c t read_encoded_value_with_base
+0200d5c8 000002a4 t fde_radixsort
+0200d86c 00000118 t __deregister_frame_info_bases.part.0
+0200d984 00000158 t get_cie_encoding
+0200dadc 000000fc t fde_mixed_encoding_extract
+0200dbd8 0000020c t classify_object_over_fdes.constprop.0
+0200dde4 00000108 t fde_single_encoding_extract
+0200deec 000000d0 t fde_single_encoding_compare
+0200dfbc 00000150 t fde_mixed_encoding_compare
+0200e10c 000002c0 t add_fdes.isra.0
+0200e3cc 00000360 t linear_search_fdes
+0200e72c 000006e4 t search_object
+0200ee10 00000088 T __register_frame_info
+0200ee98 00000020 T __deregister_frame_info
+0200eeb8 0000024c T _Unwind_Find_FDE
+0200f104 000001b8 T chdir
+0200f2bc 0000027c T _concatenate_path
+0200f538 00000008 t null_write
+0200f540 00000018 T setDefaultDevice
+0200f558 00000108 T FindDevice
+0200f660 00000040 T RemoveDevice
+0200f6a0 000000f4 T AddDevice
+0200f794 00000080 T pthread_mutex_lock
+0200f814 00000080 T pthread_mutex_unlock
+0200f894 000000fc T pthread_once
+0200f990 0000002c T pthread_key_create
+0200f9bc 0000001c T pthread_setspecific
+0200f9d8 0000001c T pthread_getspecific
+0200f9f4 0000001c T pthread_key_delete
+0200fa10 00000014 T __libc_lock_acquire
+0200fa24 00000014 T __libc_lock_release
+0200fa38 00000014 T __libc_lock_acquire_recursive
+0200fa4c 00000014 T __libc_lock_release_recursive
+0200fa60 0000001c T __libc_cond_broadcast
+0200fa7c 0000001c T __libc_cond_wait
+0200fa98 00000038 T getenv
+0200fad0 0000014c T memcpy
+0200fc1c 00000080 T strlen
+0200fc9c 0000008c T strcpy
+0200fd28 00000040 T memalign
+0200fd68 00000130 T snprintf
+0200fe98 00000148 T memchr
+0200ffe0 00000218 t _strtoul_l.isra.0
+020101f8 00000064 T strtoul
+0201025c 00000154 T strchr
+020103b0 00000124 T memcmp
+020104d4 00000180 T memset
+02010654 00000104 T strncpy
+02010758 0000009c T strcmp
+020107f4 00000058 T malloc
+0201084c 00000030 T free
+0201087c 00000078 T strrchr
+020108f4 0000013c T _findenv_r
+02010a30 00000254 T memmove
+02010c84 00000030 T strdup
+02010cb4 0000010c T _reclaim_reent
+02010dc0 000007bc t get_arg
+0201157c 000039f8 T _svfprintf_r
+02014f74 000000c0 T strnlen
+02015034 000000c8 T strncmp
+020150fc 00000090 T frexp
+0201518c 0000000c T __env_lock
+02015198 0000000c T __env_unlock
+020151a4 00000070 T _strdup_r
+02015214 00000104 T _wcrtomb_r
+02015318 0000010c T __ssprint_r
+02015424 0000004c T __locale_mb_cur_max
+02015470 00000340 t quorem
+020157b0 00001720 T _dtoa_r
+02016ed0 00000010 T _wcsrtombs_r
+02016ee0 0000004c T _localeconv_r
+02016f2c 00000194 T __ssputs_r
+020170c0 00000108 T __utf8_wctomb
+020171c8 000001e4 T _wcsnrtombs_l
+020173ac 000000d8 T _wcsnrtombs_r
+02017484 000000f4 T _Balloc
+02017578 00000024 T _Bfree
+0201759c 00000174 T __multadd
+02017710 00000098 T __hi0bits
+020177a8 0000010c T __lo0bits
+020178b4 00000108 T __i2b
+020179bc 00000338 T __multiply
+02017cf4 0000019c T __pow5mult
+02017e90 0000026c T __lshift
+020180fc 000000dc T __mcmp
+020181d8 00000314 T __mdiff
+020184ec 00000194 T __d2b
+02018680 00000604 T __utf8_mbtowc
+02018c84 00000384 T __umoddi3
+02019008 00000058 T _restgpr_14_x
+0201900c 00000054 T _restgpr_15_x
+02019010 00000050 T _restgpr_16_x
+02019014 0000004c T _restgpr_17_x
+02019018 00000048 T _restgpr_18_x
+0201901c 00000044 T _restgpr_19_x
+02019020 00000040 T _restgpr_20_x
+02019024 0000003c T _restgpr_21_x
+02019028 00000038 T _restgpr_22_x
+0201902c 00000034 T _restgpr_23_x
+02019030 00000030 T _restgpr_24_x
+02019034 0000002c T _restgpr_25_x
+02019038 00000028 T _restgpr_26_x
+0201903c 00000024 T _restgpr_27_x
+02019040 00000020 T _restgpr_28_x
+02019044 0000001c T _restgpr_29_x
+02019048 00000018 T _restgpr_30_x
+0201904c 00000014 T _restgpr_31_x
+02019060 t __do_global_ctors_aux
+020190b0 T __fini
+100009b0 d .LC2
+10000ab4 00000010 d DrcPairing::getPinSymbols[abi:cxx11]() const::pinSymbols
+10000b9c 00000080 d __wut_fsa_devoptab
+10000c1c 00000042 d CSWTCH.24
+10000c94 0000000d V typeinfo name for std::bad_alloc
+10000ca4 0000000c V typeinfo for std::bad_alloc
+10000cb0 00000014 V vtable for std::bad_alloc
+10000cc4 00000027 V typeinfo name for __gnu_cxx::__concurrence_lock_error
+10000cec 0000000c V typeinfo for __gnu_cxx::__concurrence_lock_error
+10000cf8 00000029 V typeinfo name for __gnu_cxx::__concurrence_unlock_error
+10000d24 0000000c V typeinfo for __gnu_cxx::__concurrence_unlock_error
+10000d30 00000014 V vtable for __gnu_cxx::__concurrence_lock_error
+10000d44 00000014 V vtable for __gnu_cxx::__concurrence_unlock_error
+10000d58 0000000d V typeinfo name for std::exception
+10000d68 00000020 V typeinfo name for __cxxabiv1::__forced_unwind
+10000d88 00000024 V typeinfo name for __cxxabiv1::__foreign_exception
+10000dac 00000025 V typeinfo name for __cxxabiv1::__si_class_type_info
+10000dd4 0000000c V typeinfo for __cxxabiv1::__si_class_type_info
+10000de0 0000002c V vtable for __cxxabiv1::__si_class_type_info
+10000e0c 0000000d V typeinfo name for std::type_info
+10000e1c 00000010 V typeinfo name for std::logic_error
+10000e2c 0000000c V typeinfo for std::logic_error
+10000e38 00000011 V typeinfo name for std::length_error
+10000e4c 0000000c V typeinfo for std::length_error
+10000e58 00000014 V vtable for std::logic_error
+10000e6c 00000014 V vtable for std::length_error
+10000e80 00000022 V typeinfo name for __cxxabiv1::__class_type_info
+10000ea4 0000000c V typeinfo for __cxxabiv1::__class_type_info
+10000eb0 0000002c V vtable for __cxxabiv1::__class_type_info
+10001378 00000008 d terminator.0
+10001380 00000080 D dotab_stdnull
+10001658 00000010 d zeroes.0
+10001668 00000010 d blanks.1
+100016c8 00000101 D _ctype_
+100017cc 0000006c D __action_table
+10001838 0000006c D __state_table
+100018a4 00000100 D __chclass
+100019a4 0000000c d p05.0
+100019b0 00000028 D __mprec_bigtens
+100019d8 000000c8 D __mprec_tens
+10001b24 d __CTOR_LIST__
+10001b28 D __CTOR_LIST__
+10001b34 d __CTOR_END__
+10001b34 D __CTOR_END__
+10001b38 d __DTOR_LIST__
+10001b3c D __DTOR_LIST__
+10001b48 D __DTOR_END__
+10001b4c d __EH_FRAME_BEGIN__
+10001b4c D __EH_FRAME_BEGIN__
+10005cd0 D __EH_FRAME_END__
+10005cd0 d __FRAME_END__
+10005cd8 00000001 d (anonymous namespace)::sExperimentalPatchEnabled
+10005cdc 00000004 d (anonymous namespace)::sControllerMode
+10005ce0 00000010 d (anonymous namespace)::sControllerModeValues
+10005cf0 00000004 d (anonymous namespace)::real_GX2GetSystemDRCMode
+10005cf4 00000004 d (anonymous namespace)::real_WPADProbe
+10005cf8 00000004 d (anonymous namespace)::real_WPADSetDataFormat
+10005cfc 00000004 d (anonymous namespace)::real_WPADGetDataFormat
+10005d00 00000004 d (anonymous namespace)::real_WPADGetBatteryLevel
+10005d04 00000004 d (anonymous namespace)::real_KPADReadEx
+10005d08 00000004 d (anonymous namespace)::real_KPADRead
+10005d0c 00000004 d (anonymous namespace)::real_VPADRead
+10005d10 00000004 d (anonymous namespace)::real_GX2SetDRCEnable
+10005d14 00000004 d (anonymous namespace)::real_GX2CalcDRCSize
+10005d18 00000004 d (anonymous namespace)::real_GX2SetDRCBuffer
+10005d1c 00000004 d (anonymous namespace)::real_WPADGetInfoAsync
+10005d20 00000004 d (anonymous namespace)::real_WPADGetInfo
+10005d24 00000004 d sConfigPluginIdentifier
+10005d28 00000004 d sConfigAPIVersion
+10005d2c 00000028 d __internal_functions
+10005d54 00000400 d _current_working_directory
+10006154 0000008c D devoptab_list
+100061e0 00000004 d defaultDevice
+100061e8 00000200 D _impure_data
+100063e8 00000254 D __global_locale
+1000663c 00000004 D __cxxabiv1::__unexpected_handler
+10006640 00000008 V typeinfo for std::exception
+10006648 00000008 V typeinfo for __cxxabiv1::__forced_unwind
+10006650 00000008 V typeinfo for __cxxabiv1::__foreign_exception
+10006658 00000004 D __cxxabiv1::__terminate_handler
+1000665c 00000008 V typeinfo for std::type_info
+10006664 00000004 D _impure_ptr
+10006668 00000004 D environ
+10006670 00000004 B __wut_exit
+10006674 00000001 B __eh_globals_init::_S_init
+10006675 b completed.2
+10006678 b dtor_idx.1
+1000667c b object.0
+10006694 00000004 b (anonymous namespace)::sGX2HookCalls
+10006698 00000001 b (anonymous namespace)::sPluginEnabled
+10006699 00000001 b (anonymous namespace)::sReloadMenuRequested
+1000669c 00000004 b (anonymous namespace)::sVPADDrc1ReadAttempts
+100066a0 00000004 b (anonymous namespace)::sVPADDrc1NoSamples
+100066a4 00000004 b (anonymous namespace)::sVPADDrc1Invalid
+100066a8 00000004 b (anonymous namespace)::sVPADDrc1Busy
+100066ac 00000004 b (anonymous namespace)::sVPADDrc1Uninitialized
+100066b0 00000004 b (anonymous namespace)::sVPADDrc1OtherError
+100066b4 00000004 b (anonymous namespace)::sVPADDrc1ReadSuccess
+100066b8 00000004 b (anonymous namespace)::sLastSeparateHold
+100066bc 00000004 b (anonymous namespace)::sKPADReadCalls
+100066c0 00000004 b (anonymous namespace)::sKPADInjectFailures
+100066c4 00000004 b (anonymous namespace)::sKPADInjectedSamples
+100066c8 0000000c b (anonymous namespace)::sPairing
+100066d4 00000004 b (anonymous namespace)::sVPADHookCalls
+100066d8 00000001 b (anonymous namespace)::sEmergencyDisableComboLatched
+100066dc 00000004 b (anonymous namespace)::sVPADMergedCalls
+100066e0 00000004 b (anonymous namespace)::sGX2SetDRCEnableCalls
+100066e4 00000004 b (anonymous namespace)::sGX2CalcDRCSizeCalls
+100066e8 00000004 b (anonymous namespace)::sGX2SetDRCBufferCalls
+100066ec 00000038 b __internal_functions
+10006724 00000001 b sConfigLibInitDone
+10006728 00000004 b sAPIMenuGetStatus
+1000672c 00000004 b sAPIItemDestroy
+10006730 00000004 b sAPIItemCreateEx
+10006734 00000004 b sAPICategoryAddItem
+10006738 00000004 b sAPICategoryAddCategory
+1000673c 00000004 b sAPICategoryDestroy
+10006740 00000004 b sAPICategoryCreateEx
+10006744 00000004 b sAPIInitEx
+10006748 00000004 b sAPIGetVersion
+1000674c 00000004 b sModuleHandle
+10006750 00000004 b __wut_socket_devoptab_added
+10006754 00000004 b sHeapSize
+10006758 00000004 b sHeapMaxSize
+1000675c 00000004 b sHeapBase
+10006760 00000004 b sHeapHandle
+10006770 00000010 b sMallocSpinLock
+10006780 00000010 b sSyncSpinLock
+10006790 000003b8 B __wut_fsa_device_data
+10006b48 00000018 b (anonymous namespace)::emergency_pool
+10006b60 00000004 b init
+10006b64 00000008 b (anonymous namespace)::eh_globals
+10006b6c 00000004 b (anonymous namespace)::__new_handler
+10006b70 00000010 V std::string::_Rep::_S_empty_rep_storage
+10006b80 00000004 b once_regsizes.0
+10006b84 00000070 b dwarf_reg_size_table
+10006bf4 0000000c b object_mutex
+10006c00 00000004 b seen_objects
+10006c04 00000004 b unseen_objects
+10006c08 00000400 b temp_cwd
+10007008 00000004 b __pthread_once_cv
+1000700c 00000004 b __pthread_once_lock
+10007010 00000150 B __sf
+10007160 00000008 b __env_recursive_mutex
+10007168 00000004 b initial_env
+1000716c 0000008c R wups_meta_info_linking_order
+100071f8 0000001e R wups_meta_storage_id
+10007218 0000000c R wups_meta_license
+10007224 00000011 R wups_meta_author
+10007238 0000000d R wups_meta_version
+10007248 00000030 R wups_meta_description
+10007278 0000003c R wups_meta_info_dump
+100072b4 00000007 R wups_meta_plugin_name
+100072bc 00000024 R wups_meta_buildtimestamp
+100072e0 0000000b R wups_meta_wups
+100072ec 0000000c R wups_meta_name
+100072f8 00000024 R (anonymous namespace)::wups_load_my_KPADReadHomeMenu
+1000731c 00000024 R (anonymous namespace)::wups_load_my_KPADRead
+10007340 00000024 R (anonymous namespace)::wups_load_my_KPADReadExHomeMenu
+10007364 00000024 R (anonymous namespace)::wups_load_my_KPADReadEx
+10007388 00000024 R (anonymous namespace)::wups_load_my_WPADGetBatteryLevel
+100073ac 00000024 R (anonymous namespace)::wups_load_my_WPADGetDataFormat
+100073d0 00000024 R (anonymous namespace)::wups_load_my_WPADSetDataFormat
+100073f4 00000024 R (anonymous namespace)::wups_load_my_WPADGetInfoAsync
+10007418 00000024 R (anonymous namespace)::wups_load_my_WPADGetInfo
+1000743c 00000024 R (anonymous namespace)::wups_load_my_WPADProbe
+10007460 00000024 R (anonymous namespace)::wups_load_my_VPADRead
+10007484 00000024 R (anonymous namespace)::wups_load_my_GX2SetDRCBuffer
+100074a8 00000024 R (anonymous namespace)::wups_load_my_GX2CalcDRCSize
+100074cc 00000024 R (anonymous namespace)::wups_load_my_GX2SetDRCEnable
+100074f0 00000024 R (anonymous namespace)::wups_load_my_GX2GetSystemDRCMode
+10007514 00000008 R wups_hooks_deinit_plugin
+1000751c 00000008 R wups_hooks_on_release_foreground
+10007524 00000008 R wups_hooks_on_acquired_foreground
+1000752c 00000008 R wups_hooks_on_app_starting
+10007534 00000008 R wups_hooks_init_plugin
+1000753c 00000008 R wups_hooks_init_storage
+10007544 00000008 R wups_hooks_on_fini_wut_devoptab
+1000754c 00000008 R wups_hooks_on_init_wut_devoptab
+10007554 00000008 R wups_hooks_wups_init_button_combo_functions
+1000755c 00000008 R wups_hooks_wups_init_config_functions
+10007564 00000008 R wups_hooks___fini_wrapper
+1000756c 00000008 R wups_hooks___init_wrapper
+10007574 00000008 R wups_hooks_on_init_wut_thread
+1000757c 00000008 R wups_hooks_on_fini_wut_stdcpp
+10007584 00000008 R wups_hooks_on_init_wut_stdcpp
+1000758c 00000008 R wups_hooks_on_fini_wut_newlib
+10007594 00000008 R wups_hooks_on_init_wut_newlib
+1000759c 00000008 R wups_hooks_on_fini_wut_sockets
+100075a4 00000008 R wups_hooks_on_init_wut_sockets
+100075ac 00000008 R wups_hooks_on_fini_wut_malloc
+100075b4 00000008 R wups_hooks_on_init_wut_malloc
 c0000038 T FSAAddClient
 c0000040 T FSAChangeDir
 c0000048 T FSAChangeMode
