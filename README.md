@@ -18,11 +18,11 @@ THIS APP IS IN BETA, expect lots of bugs.
 • Press left stick and right stick together to disconnect the second gamepad
 
 # Usage
-You can get it from the Homebrew app store.
+You can get it directly from the Homebrew app store.
 
 [<img width="1080" height="300" alt="HB App Store shortcut link" src="https://github.com/user-attachments/assets/b665a650-9f9b-4db0-a980-c326a1da74b5" style="width:35%; height:auto;" />](https://hb-app.store/wiiu/DualU)
 
-Download the zip from https://github.com/tech-will/Dual-U/releases/tag/Official-Release and extract to the root of your switch SD card.
+ Or you can download the zip from https://github.com/tech-will/Dual-U/releases/tag/Official-Release and extract to the root of your Wii U SD card.
 
 To pair, first go into the pairing options menu by going into the Aroma Plugin Menu and select Dual U. Then click on pair and it should say pairing under pairing status. There is a time out of 120 seconds so you don't get stuck. Once paired, it should work but if it doesn't, restart the console. You don't have to do this again
 
