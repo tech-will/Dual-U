@@ -75,6 +75,8 @@ uint32_t sKPADInjectFailures = 0;
 uint32_t sLastSeparateHold = 0;
 bool sEmergencyDisableComboLatched = false;
 bool sReloadMenuRequested = false;
+uint8_t sSyntheticRumblePatternOn = 0xFF;
+uint8_t sSyntheticRumblePatternOff = 0x00;
 
 void ApplyDualDrcMode(bool enabled);
 
@@ -549,6 +551,71 @@ DECL_FUNCTION(uint8_t, WPADGetBatteryLevel, WPADChan channel) {
 WUPS_MUST_REPLACE_FOR_PROCESS(WPADGetBatteryLevel,
                               WUPS_LOADER_LIBRARY_PADSCORE,
                               WPADGetBatteryLevel,
+                              WUPS_FP_TARGET_PROCESS_GAME_AND_MENU);
+
+DECL_FUNCTION(int32_t, VPADControlMotor, VPADChan chan, uint8_t *pattern, uint8_t length) {
+    int32_t result = real_VPADControlMotor(chan, pattern, length);
+
+    // Mirror rumble to DRC1 whenever the primary gamepad is told to rumble.
+    if (sPluginEnabled && chan == VPAD_CHAN_0) {
+        // If the pattern indicates 'on' (any non-zero byte), send an amplified
+        // pattern to make the DRC1 motor feel stronger.
+        bool anyOn = false;
+        if (pattern != nullptr && length > 0) {
+            for (uint8_t i = 0; i < length; ++i) {
+                if (pattern[i] != 0) {
+                    anyOn = true;
+                    break;
+                }
+            }
+        }
+
+        if (anyOn) {
+            // Stronger pattern: repeated on bytes for a longer duration.
+            uint8_t amplified[8];
+            for (int i = 0; i < (int)sizeof(amplified); ++i) amplified[i] = 0xFF;
+            real_VPADControlMotor(VPAD_CHAN_1, amplified, sizeof(amplified));
+        } else {
+            // Ensure motor is stopped on DRC1 when primary stops.
+            uint8_t off = 0x00;
+            real_VPADControlMotor(VPAD_CHAN_1, &off, 1);
+        }
+    }
+    return result;
+}
+WUPS_MUST_REPLACE_FOR_PROCESS(VPADControlMotor,
+                              WUPS_LOADER_LIBRARY_VPAD,
+                              VPADControlMotor,
+                              WUPS_FP_TARGET_PROCESS_GAME_AND_MENU);
+
+DECL_FUNCTION(void, WPADControlMotor, WPADChan channel, BOOL motorEnabled) {
+    real_WPADControlMotor(channel, motorEnabled);
+    // In separate mode the synthetic Pro controller maps to DRC1; forward its rumble.
+    if (sPluginEnabled && IsSeparateMode() && IsSyntheticControllerChannel(channel)) {
+        if (motorEnabled) {
+            uint8_t amplified[8];
+            for (int i = 0; i < (int)sizeof(amplified); ++i) amplified[i] = 0xFF;
+            real_VPADControlMotor(VPAD_CHAN_1, amplified, sizeof(amplified));
+        } else {
+            uint8_t off = 0x00;
+            real_VPADControlMotor(VPAD_CHAN_1, &off, 1);
+        }
+    }
+}
+WUPS_MUST_REPLACE_FOR_PROCESS(WPADControlMotor,
+                              WUPS_LOADER_LIBRARY_PADSCORE,
+                              WPADControlMotor,
+                              WUPS_FP_TARGET_PROCESS_GAME_AND_MENU);
+
+DECL_FUNCTION(void, VPADStopMotor, VPADChan chan) {
+    real_VPADStopMotor(chan);
+    if (sPluginEnabled && chan == VPAD_CHAN_0) {
+        real_VPADStopMotor(VPAD_CHAN_1);
+    }
+}
+WUPS_MUST_REPLACE_FOR_PROCESS(VPADStopMotor,
+                              WUPS_LOADER_LIBRARY_VPAD,
+                              VPADStopMotor,
                               WUPS_FP_TARGET_PROCESS_GAME_AND_MENU);
 
 DECL_FUNCTION(uint32_t, KPADReadEx, KPADChan chan, KPADStatus *data, uint32_t size, KPADError *error) {
