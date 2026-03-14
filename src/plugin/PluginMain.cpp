@@ -17,7 +17,7 @@
 
 WUPS_PLUGIN_NAME("Dual U");
 WUPS_PLUGIN_DESCRIPTION("Pair and use a second Wii U gamepad");
-WUPS_PLUGIN_VERSION("v0.1");
+WUPS_PLUGIN_VERSION("v0.4");
 WUPS_PLUGIN_AUTHOR("tech-will");
 WUPS_PLUGIN_LICENSE("MIT");
 
@@ -35,7 +35,7 @@ constexpr uint32_t kDefaultControllerMode = CONTROLLER_MODE_SEPARATE_PRO;
 constexpr const char *kStorageKeyEnabled = "dual_drc_enabled";
 constexpr const char *kStorageKeyControllerMode = "dual_drc_controller_mode";
 constexpr const char *kStorageKeyEnableOnce = "dual_drc_enable_once";
-constexpr uint32_t kEmergencyDisableCombo = VPAD_BUTTON_STICK_L | VPAD_BUTTON_STICK_R;
+constexpr uint32_t kControllerModeToggleCombo = VPAD_BUTTON_STICK_L | VPAD_BUTTON_STICK_R;
 constexpr WPADChan kSyntheticControllerChannel = WPAD_CHAN_0;
 
 bool sPluginEnabled = kDefaultPluginEnabled;
@@ -73,7 +73,7 @@ uint32_t sKPADReadCalls = 0;
 uint32_t sKPADInjectedSamples = 0;
 uint32_t sKPADInjectFailures = 0;
 uint32_t sLastSeparateHold = 0;
-bool sEmergencyDisableComboLatched = false;
+bool sControllerModeToggleComboLatched = false;
 bool sReloadMenuRequested = false;
 uint8_t sSyntheticRumblePatternOn = 0xFF;
 uint8_t sSyntheticRumblePatternOff = 0x00;
@@ -110,36 +110,33 @@ void LoadSettingsFromStorage() {
     }
 }
 
-void DisablePluginImmediately() {
-    if (!sPluginEnabled) {
-        return;
-    }
-    sPluginEnabled = false;
-    ApplyDualDrcMode(false);
-    if (sPairing.getState() == DrcPairing::STATE_PAIRING) {
-        sPairing.stopPairing();
+void ToggleControllerMode() {
+    if (sControllerMode == CONTROLLER_MODE_MIRRORED) {
+        sControllerMode = CONTROLLER_MODE_SEPARATE_PRO;
+    } else {
+        sControllerMode = CONTROLLER_MODE_MIRRORED;
     }
     SaveSettingsToStorage();
 }
 
-void CheckEmergencyDisableCombo(const VPADStatus *buffers, int32_t readCount) {
+void CheckControllerModeToggleCombo(const VPADStatus *buffers, int32_t readCount) {
     if (buffers == nullptr || readCount <= 0) {
-        sEmergencyDisableComboLatched = false;
+        sControllerModeToggleComboLatched = false;
         return;
     }
 
     bool comboPressed = false;
     for (int32_t i = 0; i < readCount; i++) {
-        if ((buffers[i].hold & kEmergencyDisableCombo) == kEmergencyDisableCombo) {
+        if ((buffers[i].hold & kControllerModeToggleCombo) == kControllerModeToggleCombo) {
             comboPressed = true;
             break;
         }
     }
 
-    if (comboPressed && !sEmergencyDisableComboLatched) {
-        DisablePluginImmediately();
+    if (comboPressed && !sControllerModeToggleComboLatched) {
+        ToggleControllerMode();
     }
-    sEmergencyDisableComboLatched = comboPressed;
+    sControllerModeToggleComboLatched = comboPressed;
 }
 
 bool IsMirroredMode() {
@@ -409,7 +406,9 @@ DECL_FUNCTION(int32_t, VPADRead, VPADChan chan, VPADStatus *buffers, uint32_t co
     sVPADHookCalls++;
     int32_t readCount = real_VPADRead(chan, buffers, count, outError);
 
-    CheckEmergencyDisableCombo(buffers, readCount);
+    if (chan == VPAD_CHAN_0) {
+        CheckControllerModeToggleCombo(buffers, readCount);
+    }
 
     if (!sPluginEnabled || !sExperimentalPatchEnabled || !IsMirroredMode()) {
         return readCount;
@@ -453,6 +452,19 @@ DECL_FUNCTION(int32_t, VPADRead, VPADChan chan, VPADStatus *buffers, uint32_t co
         buffers[i].hold |= drc1Buffer[i].hold;
         buffers[i].trigger |= drc1Buffer[i].trigger;
         buffers[i].release |= drc1Buffer[i].release;
+
+        if (std::abs(drc1Buffer[i].leftStick.x) > std::abs(buffers[i].leftStick.x)) {
+            buffers[i].leftStick.x = drc1Buffer[i].leftStick.x;
+        }
+        if (std::abs(drc1Buffer[i].leftStick.y) > std::abs(buffers[i].leftStick.y)) {
+            buffers[i].leftStick.y = drc1Buffer[i].leftStick.y;
+        }
+        if (std::abs(drc1Buffer[i].rightStick.x) > std::abs(buffers[i].rightStick.x)) {
+            buffers[i].rightStick.x = drc1Buffer[i].rightStick.x;
+        }
+        if (std::abs(drc1Buffer[i].rightStick.y) > std::abs(buffers[i].rightStick.y)) {
+            buffers[i].rightStick.y = drc1Buffer[i].rightStick.y;
+        }
     }
     sVPADMergedCalls++;
 
