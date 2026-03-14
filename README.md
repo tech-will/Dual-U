@@ -15,7 +15,7 @@ THIS APP IS IN BETA, expect lots of bugs.
 • Reload Wii U button to easily connect both of the gamepads
 
 # Controls
-• Press left stick and right stick together to disconnect the second gamepad
+• Press left stick and right stick together to change the controller mode between Seperate and Mirrored.
 
 # Usage
 You can get it directly from the Homebrew app store.
