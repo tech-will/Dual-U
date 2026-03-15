@@ -42,6 +42,7 @@ second gamepad in the Quick Start menu which somehow controls the Wii U.
 
 • Video ether doesn't work or is glitched out
 
+• Slows down the console a lot
 # Photos:
 ![WIN_20260307_20_13_33_Pro](https://github.com/user-attachments/assets/f1980eca-90db-4239-b6de-a7dcbe298b8a)
 Broken video but works with two gamepads
