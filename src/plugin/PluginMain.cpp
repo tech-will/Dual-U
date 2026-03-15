@@ -17,7 +17,7 @@
 
 WUPS_PLUGIN_NAME("Dual U");
 WUPS_PLUGIN_DESCRIPTION("Pair and use a second Wii U gamepad");
-WUPS_PLUGIN_VERSION("v0.4");
+WUPS_PLUGIN_VERSION("v0.5");
 WUPS_PLUGIN_AUTHOR("tech-will");
 WUPS_PLUGIN_LICENSE("MIT");
 
@@ -32,14 +32,17 @@ enum ControllerMode : uint32_t {
 
 constexpr bool kDefaultPluginEnabled = false;
 constexpr uint32_t kDefaultControllerMode = CONTROLLER_MODE_SEPARATE_PRO;
+constexpr bool kDefaultPerformanceModeEnabled = false;
 constexpr const char *kStorageKeyEnabled = "dual_drc_enabled";
 constexpr const char *kStorageKeyControllerMode = "dual_drc_controller_mode";
 constexpr const char *kStorageKeyEnableOnce = "dual_drc_enable_once";
+constexpr const char *kStorageKeyPerformanceMode = "dual_drc_performance_mode";
 constexpr uint32_t kControllerModeToggleCombo = VPAD_BUTTON_STICK_L | VPAD_BUTTON_STICK_R;
 constexpr WPADChan kSyntheticControllerChannel = WPAD_CHAN_0;
 
 bool sPluginEnabled = kDefaultPluginEnabled;
 bool sExperimentalPatchEnabled = true;
+bool sPerformanceModeEnabled = kDefaultPerformanceModeEnabled;
 
 uint32_t sControllerMode = kDefaultControllerMode;
 
@@ -84,6 +87,7 @@ void SaveSettingsToStorage() {
     // Keep enabled state volatile so power cycles always recover to default off.
     WUPSStorageAPI_StoreBool(nullptr, kStorageKeyEnabled, kDefaultPluginEnabled);
     WUPSStorageAPI_StoreU32(nullptr, kStorageKeyControllerMode, sControllerMode);
+    WUPSStorageAPI_StoreBool(nullptr, kStorageKeyPerformanceMode, sPerformanceModeEnabled);
     WUPSStorageAPI_SaveStorage(false);
 }
 
@@ -107,6 +111,11 @@ void LoadSettingsFromStorage() {
         if (controllerMode <= CONTROLLER_MODE_SEPARATE_PRO) {
             sControllerMode = controllerMode;
         }
+    }
+
+    bool performanceMode = kDefaultPerformanceModeEnabled;
+    if (WUPSStorageAPI_GetBool(nullptr, kStorageKeyPerformanceMode, &performanceMode) == WUPS_STORAGE_ERROR_SUCCESS) {
+        sPerformanceModeEnabled = performanceMode;
     }
 }
 
@@ -213,6 +222,11 @@ void PluginEnabledChanged(ConfigItemBoolean *, bool newValue) {
 
 void ControllerModeChanged(ConfigItemMultipleValues *, uint32_t newValue) {
     sControllerMode = newValue;
+    SaveSettingsToStorage();
+}
+
+void PerformanceModeChanged(ConfigItemBoolean *, bool newValue) {
+    sPerformanceModeEnabled = newValue;
     SaveSettingsToStorage();
 }
 
@@ -333,7 +347,7 @@ bool BuildSyntheticKpadFromDrc1(KPADStatus *outStatus) {
 DECL_FUNCTION(GX2DrcRenderMode, GX2GetSystemDRCMode) {
     sGX2HookCalls++;
     GX2DrcRenderMode mode = real_GX2GetSystemDRCMode();
-    if (sPluginEnabled && sExperimentalPatchEnabled) {
+    if (sPluginEnabled && sExperimentalPatchEnabled && !sPerformanceModeEnabled) {
         return GX2_DRC_RENDER_MODE_DOUBLE;
     }
     return mode;
@@ -345,7 +359,7 @@ WUPS_MUST_REPLACE_FOR_PROCESS(GX2GetSystemDRCMode,
 
 DECL_FUNCTION(void, GX2SetDRCEnable, BOOL enable) {
     sGX2SetDRCEnableCalls++;
-    if (sPluginEnabled && sExperimentalPatchEnabled) {
+    if (sPluginEnabled && sExperimentalPatchEnabled && !sPerformanceModeEnabled) {
         real_GX2SetDRCEnable(TRUE);
         return;
     }
@@ -364,7 +378,7 @@ DECL_FUNCTION(void,
               uint32_t *size,
               uint32_t *unkOut) {
     sGX2CalcDRCSizeCalls++;
-    if (sPluginEnabled && sExperimentalPatchEnabled) {
+    if (sPluginEnabled && sExperimentalPatchEnabled && !sPerformanceModeEnabled) {
         real_GX2CalcDRCSize(GX2_DRC_RENDER_MODE_DOUBLE,
                             surfaceFormat,
                             bufferingMode,
@@ -387,7 +401,7 @@ DECL_FUNCTION(void,
               GX2SurfaceFormat surfaceFormat,
               GX2BufferingMode bufferingMode) {
     sGX2SetDRCBufferCalls++;
-    if (sPluginEnabled && sExperimentalPatchEnabled) {
+    if (sPluginEnabled && sExperimentalPatchEnabled && !sPerformanceModeEnabled) {
         real_GX2SetDRCBuffer(buffer,
                              size,
                              GX2_DRC_RENDER_MODE_DOUBLE,
@@ -729,10 +743,10 @@ int32_t ReloadMenu_getCurrentValueSelectedDisplay(void *, char *out_buf, int32_t
 
 void PairNow_onInput(void *, WUPSConfigSimplePadData input) {
     if ((input.buttons_d & WUPS_CONFIG_BUTTON_A) == WUPS_CONFIG_BUTTON_A) {
-        if (sPluginEnabled) {
-            ApplyDualDrcMode(true);
-            sPairing.startPairing(120);
-        }
+        // Allow pairing regardless of plugin enabled state — the user needs to
+        // pair before using the plugin, so don't block on sPluginEnabled.
+        ApplyDualDrcMode(true);
+        sPairing.startPairing(120);
     }
 }
 
@@ -902,6 +916,17 @@ WUPSConfigAPICallbackStatus ConfigMenuOpenedCallback(WUPSConfigCategoryHandle ro
                                                     sControllerModeValues,
                                                     sizeof(sControllerModeValues) / sizeof(sControllerModeValues[0]),
                                                     &ControllerModeChanged) != WUPSCONFIG_API_RESULT_SUCCESS) {
+        return WUPSCONFIG_API_CALLBACK_RESULT_ERROR;
+    }
+
+    if (WUPSConfigItemBoolean_AddToCategoryEx(root,
+                                               "dual_drc_performance_mode",
+                                               "Performance Mode (disable DRC1 video)",
+                                               kDefaultPerformanceModeEnabled,
+                                               sPerformanceModeEnabled,
+                                               &PerformanceModeChanged,
+                                               "On",
+                                               "Off") != WUPSCONFIG_API_RESULT_SUCCESS) {
         return WUPSCONFIG_API_CALLBACK_RESULT_ERROR;
     }
 
