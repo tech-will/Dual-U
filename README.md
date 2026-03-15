@@ -30,6 +30,9 @@ To turn the plugin on, go into the Dual U plugin in the Aroma Plugin Menu and se
 
 Turning the console off will disable the plugin. If this doesn't happen, try restarting the console and it should work.
 
+The "Performance Mode" toggle causes the second gamepad to disconnect under normal use. To fix this, keep the 
+second gamepad in the Quick Start menu which somehow controls the Wii U.
+
 # Known Issues
 • Blocks the Aroma Plugin Menu opening on the home menu but not in games.
 
