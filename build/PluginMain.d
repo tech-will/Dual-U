@@ -8,6 +8,8 @@ PluginMain.o: \
  C:/devkitPro/wut/include/gx2/enum.h \
  C:/devkitPro/wut/include/gx2/surface.h \
  C:/devkitPro/wut/include/gx2r/resource.h \
+ C:/devkitPro/wut/include/gx2/registers.h \
+ C:/devkitPro/wut/include/gx2/swap.h \
  C:/devkitPro/wut/include/nsysccr/cdc.h \
  C:/devkitPro/wut/include/coreinit/ios.h \
  C:/devkitPro/wut/include/padscore/kpad.h \
@@ -29,6 +31,7 @@ PluginMain.o: \
  C:/devkitPro/wups/include/wups/hooks.h \
  C:/devkitPro/wups/include/wups/button_combo_internal.h \
  C:/devkitPro/wups/include/wups/button_combo/defines.h \
+ C:/devkitPro/wups/include/wups/reent_internal.h \
  C:/devkitPro/wups/include/wups/storage.h \
  C:/devkitPro/wups/include/wups/meta.h \
  C:/devkitPro/wups/include/wups/wups_debug.h \
@@ -43,6 +46,8 @@ C:/devkitPro/wut/include/wut_rplwrap.h:
 C:/devkitPro/wut/include/gx2/enum.h:
 C:/devkitPro/wut/include/gx2/surface.h:
 C:/devkitPro/wut/include/gx2r/resource.h:
+C:/devkitPro/wut/include/gx2/registers.h:
+C:/devkitPro/wut/include/gx2/swap.h:
 C:/devkitPro/wut/include/nsysccr/cdc.h:
 C:/devkitPro/wut/include/coreinit/ios.h:
 C:/devkitPro/wut/include/padscore/kpad.h:
@@ -65,6 +70,7 @@ C:/devkitPro/wups/include/wups/function_patching.h:
 C:/devkitPro/wups/include/wups/hooks.h:
 C:/devkitPro/wups/include/wups/button_combo_internal.h:
 C:/devkitPro/wups/include/wups/button_combo/defines.h:
+C:/devkitPro/wups/include/wups/reent_internal.h:
 C:/devkitPro/wups/include/wups/storage.h:
 C:/devkitPro/wups/include/wups/meta.h:
 C:/devkitPro/wups/include/wups/wups_debug.h:

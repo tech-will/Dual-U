@@ -3,6 +3,9 @@
 #include <cstdio>
 #include <algorithm>
 #include <gx2/display.h>
+#include <gx2/registers.h>
+#include <gx2/surface.h>
+#include <gx2/swap.h>
 #include <nsysccr/cdc.h>
 #include <padscore/kpad.h>
 #include <padscore/wpad.h>
@@ -17,7 +20,7 @@
 
 WUPS_PLUGIN_NAME("Dual U");
 WUPS_PLUGIN_DESCRIPTION("Pair and use a second Wii U gamepad");
-WUPS_PLUGIN_VERSION("v0.5");
+WUPS_PLUGIN_VERSION("v0.6");
 WUPS_PLUGIN_AUTHOR("tech-will");
 WUPS_PLUGIN_LICENSE("MIT");
 
@@ -30,14 +33,22 @@ enum ControllerMode : uint32_t {
     CONTROLLER_MODE_SEPARATE_PRO = 1,
 };
 
+enum VideoFeedMode : uint32_t {
+    VIDEO_FEED_TV = 0,
+    VIDEO_FEED_GAMEPAD = 1,
+};
+
 constexpr bool kDefaultPluginEnabled = false;
 constexpr uint32_t kDefaultControllerMode = CONTROLLER_MODE_SEPARATE_PRO;
+constexpr uint32_t kDefaultVideoFeedMode = VIDEO_FEED_GAMEPAD;
 constexpr bool kDefaultPerformanceModeEnabled = false;
 constexpr const char *kStorageKeyEnabled = "dual_drc_enabled";
 constexpr const char *kStorageKeyControllerMode = "dual_drc_controller_mode";
+constexpr const char *kStorageKeyVideoFeedMode = "dual_drc_video_feed_mode";
 constexpr const char *kStorageKeyEnableOnce = "dual_drc_enable_once";
 constexpr const char *kStorageKeyPerformanceMode = "dual_drc_performance_mode";
 constexpr uint32_t kControllerModeToggleCombo = VPAD_BUTTON_STICK_L | VPAD_BUTTON_STICK_R;
+constexpr uint32_t kVideoFeedToggleCombo = VPAD_BUTTON_RIGHT | VPAD_BUTTON_Y;
 constexpr WPADChan kSyntheticControllerChannel = WPAD_CHAN_0;
 
 bool sPluginEnabled = kDefaultPluginEnabled;
@@ -45,10 +56,16 @@ bool sExperimentalPatchEnabled = true;
 bool sPerformanceModeEnabled = kDefaultPerformanceModeEnabled;
 
 uint32_t sControllerMode = kDefaultControllerMode;
+uint32_t sVideoFeedMode = kDefaultVideoFeedMode;
 
 ConfigItemMultipleValuesPair sControllerModeValues[] = {
         {CONTROLLER_MODE_MIRRORED, "Mirrored"},
     {CONTROLLER_MODE_SEPARATE_PRO, "Seperate"},
+};
+
+ConfigItemMultipleValuesPair sVideoFeedValues[] = {
+        {VIDEO_FEED_TV, "TV Video"},
+    {VIDEO_FEED_GAMEPAD, "Gamepad Video"},
 };
 
 DrcPairing sPairing;
@@ -61,6 +78,10 @@ uint32_t sGX2HookCalls = 0;
 uint32_t sGX2SetDRCEnableCalls = 0;
 uint32_t sGX2SetDRCBufferCalls = 0;
 uint32_t sGX2CalcDRCSizeCalls = 0;
+uint32_t sGX2CopyToScanBufferCalls = 0;
+uint32_t sGX2CopyToDrc1Calls = 0;
+GX2ColorBuffer sCachedTvColorBuffer = {};
+bool sHasCachedTvColorBuffer = false;
 uint32_t sVPADHookCalls = 0;
 uint32_t sVPADMergedCalls = 0;
 uint32_t sVPADDrc1ReadAttempts = 0;
@@ -77,6 +98,7 @@ uint32_t sKPADInjectedSamples = 0;
 uint32_t sKPADInjectFailures = 0;
 uint32_t sLastSeparateHold = 0;
 bool sControllerModeToggleComboLatched = false;
+bool sVideoFeedToggleComboLatched = false;
 bool sReloadMenuRequested = false;
 uint8_t sSyntheticRumblePatternOn = 0xFF;
 uint8_t sSyntheticRumblePatternOff = 0x00;
@@ -87,6 +109,7 @@ void SaveSettingsToStorage() {
     // Keep enabled state volatile so power cycles always recover to default off.
     WUPSStorageAPI_StoreBool(nullptr, kStorageKeyEnabled, kDefaultPluginEnabled);
     WUPSStorageAPI_StoreU32(nullptr, kStorageKeyControllerMode, sControllerMode);
+    WUPSStorageAPI_StoreU32(nullptr, kStorageKeyVideoFeedMode, sVideoFeedMode);
     WUPSStorageAPI_StoreBool(nullptr, kStorageKeyPerformanceMode, sPerformanceModeEnabled);
     WUPSStorageAPI_SaveStorage(false);
 }
@@ -110,6 +133,13 @@ void LoadSettingsFromStorage() {
     if (WUPSStorageAPI_GetU32(nullptr, kStorageKeyControllerMode, &controllerMode) == WUPS_STORAGE_ERROR_SUCCESS) {
         if (controllerMode <= CONTROLLER_MODE_SEPARATE_PRO) {
             sControllerMode = controllerMode;
+        }
+    }
+
+    uint32_t videoFeedMode = kDefaultVideoFeedMode;
+    if (WUPSStorageAPI_GetU32(nullptr, kStorageKeyVideoFeedMode, &videoFeedMode) == WUPS_STORAGE_ERROR_SUCCESS) {
+        if (videoFeedMode <= VIDEO_FEED_GAMEPAD) {
+            sVideoFeedMode = videoFeedMode;
         }
     }
 
@@ -146,6 +176,35 @@ void CheckControllerModeToggleCombo(const VPADStatus *buffers, int32_t readCount
         ToggleControllerMode();
     }
     sControllerModeToggleComboLatched = comboPressed;
+}
+
+void ToggleVideoFeedMode() {
+    if (sVideoFeedMode == VIDEO_FEED_GAMEPAD) {
+        sVideoFeedMode = VIDEO_FEED_TV;
+    } else {
+        sVideoFeedMode = VIDEO_FEED_GAMEPAD;
+    }
+    SaveSettingsToStorage();
+}
+
+void CheckVideoFeedToggleCombo(const VPADStatus *buffers, int32_t readCount) {
+    if (buffers == nullptr || readCount <= 0) {
+        sVideoFeedToggleComboLatched = false;
+        return;
+    }
+
+    bool comboPressed = false;
+    for (int32_t i = 0; i < readCount; i++) {
+        if ((buffers[i].hold & kVideoFeedToggleCombo) == kVideoFeedToggleCombo) {
+            comboPressed = true;
+            break;
+        }
+    }
+
+    if (comboPressed && !sVideoFeedToggleComboLatched) {
+        ToggleVideoFeedMode();
+    }
+    sVideoFeedToggleComboLatched = comboPressed;
 }
 
 bool IsMirroredMode() {
@@ -222,6 +281,11 @@ void PluginEnabledChanged(ConfigItemBoolean *, bool newValue) {
 
 void ControllerModeChanged(ConfigItemMultipleValues *, uint32_t newValue) {
     sControllerMode = newValue;
+    SaveSettingsToStorage();
+}
+
+void VideoFeedModeChanged(ConfigItemMultipleValues *, uint32_t newValue) {
+    sVideoFeedMode = newValue;
     SaveSettingsToStorage();
 }
 
@@ -416,12 +480,77 @@ WUPS_MUST_REPLACE_FOR_PROCESS(GX2SetDRCBuffer,
                               GX2SetDRCBuffer,
                               WUPS_FP_TARGET_PROCESS_GAME_AND_MENU);
 
+DECL_FUNCTION(void, GX2CopyColorBufferToScanBuffer, const GX2ColorBuffer *colorBuffer, GX2ScanTarget scanTarget) {
+    sGX2CopyToScanBufferCalls++;
+    real_GX2CopyColorBufferToScanBuffer(colorBuffer, scanTarget);
+
+    // Keep a copy of the most recent TV frame around so it can be reused
+    // as the DRC1 source when "Video Feed" is set to TV Video. This runs
+    // regardless of plugin state so the cache is already warm the moment
+    // the plugin/feed setting gets turned on.
+    if (colorBuffer != nullptr && scanTarget == GX2_SCAN_TARGET_TV) {
+        sCachedTvColorBuffer = *colorBuffer;
+        sHasCachedTvColorBuffer = true;
+    }
+
+    if (!sPluginEnabled || !sExperimentalPatchEnabled || sPerformanceModeEnabled) {
+        return;
+    }
+
+    // The game only ever knows about a single GamePad, so it copies its
+    // rendered frame to the primary DRC scan target exactly once per
+    // frame. Forcing GX2_DRC_RENDER_MODE_DOUBLE (see the hooks above)
+    // reserves a scan buffer big enough for two GamePad images, but that
+    // reservation alone doesn't put any pixels into the second half of
+    // it. Mirror a frame onto DRC1 here so it actually gets fresh video
+    // every frame -- either the same GamePad frame DRC0 just got, or the
+    // most recently captured TV frame, depending on "Video Feed".
+    if (colorBuffer != nullptr && (scanTarget == GX2_SCAN_TARGET_DRC || scanTarget == GX2_SCAN_TARGET_DRC0)) {
+        sGX2CopyToDrc1Calls++;
+
+        const GX2ColorBuffer *drc1Source = colorBuffer;
+        if (sVideoFeedMode == VIDEO_FEED_TV && sHasCachedTvColorBuffer) {
+            drc1Source = &sCachedTvColorBuffer;
+        }
+
+        // GaryOderNichts' MultiDRCSpaceDemo (the reference this plugin is
+        // built on) never calls GX2CopyColorBufferToScanBuffer without
+        // first (re-)binding that exact buffer as the active render
+        // target via GX2SetColorBuffer/GX2SetViewport/GX2SetScissor. The
+        // copy-to-scanbuffer path depends on that binding, not just on
+        // the pointer argument -- calling it "cold" a second time is what
+        // was producing torn/garbled video instead of a clean mirror.
+        // Re-asserting it here with the source buffer's own dimensions
+        // (TV and GamePad resolutions differ, so this must match whichever
+        // source we picked above) is a no-op relative to the game's own
+        // state when the source is DRC0's own buffer, and a real rebind
+        // when the source is the cached TV buffer -- either way it
+        // doesn't disturb whatever the game binds next.
+        GX2ColorBuffer *mutableColorBuffer = const_cast<GX2ColorBuffer *>(drc1Source);
+        GX2SetColorBuffer(mutableColorBuffer, GX2_RENDER_TARGET_0);
+        GX2SetViewport(0.0f,
+                       0.0f,
+                       static_cast<float>(drc1Source->surface.width),
+                       static_cast<float>(drc1Source->surface.height),
+                       0.0f,
+                       1.0f);
+        GX2SetScissor(0, 0, drc1Source->surface.width, drc1Source->surface.height);
+
+        real_GX2CopyColorBufferToScanBuffer(drc1Source, GX2_SCAN_TARGET_DRC1);
+    }
+}
+WUPS_MUST_REPLACE_FOR_PROCESS(GX2CopyColorBufferToScanBuffer,
+                              WUPS_LOADER_LIBRARY_GX2,
+                              GX2CopyColorBufferToScanBuffer,
+                              WUPS_FP_TARGET_PROCESS_GAME_AND_MENU);
+
 DECL_FUNCTION(int32_t, VPADRead, VPADChan chan, VPADStatus *buffers, uint32_t count, VPADReadError *outError) {
     sVPADHookCalls++;
     int32_t readCount = real_VPADRead(chan, buffers, count, outError);
 
     if (chan == VPAD_CHAN_0) {
         CheckControllerModeToggleCombo(buffers, readCount);
+        CheckVideoFeedToggleCombo(buffers, readCount);
     }
 
     if (!sPluginEnabled || !sExperimentalPatchEnabled || !IsMirroredMode()) {
@@ -794,6 +923,20 @@ int32_t Pin_getCurrentValueSelectedDisplay(void *ctx, char *out_buf, int32_t out
     return Pin_getCurrentValueDisplay(ctx, out_buf, out_size);
 }
 
+// Used for purely informational rows (section headers/instructions) that
+// have no value of their own -- the text lives entirely in the item's
+// displayName, so the value column is left blank.
+int32_t StaticText_getCurrentValueDisplay(void *, char *out_buf, int32_t out_size) {
+    if (out_buf != nullptr && out_size > 0) {
+        out_buf[0] = '\0';
+    }
+    return 0;
+}
+
+int32_t StaticText_getCurrentValueSelectedDisplay(void *ctx, char *out_buf, int32_t out_size) {
+    return StaticText_getCurrentValueDisplay(ctx, out_buf, out_size);
+}
+
 WUPSConfigAPICallbackStatus ConfigMenuOpenedCallback(WUPSConfigCategoryHandle root) {
     if (sPluginEnabled) {
         ApplyDualDrcMode(true);
@@ -919,6 +1062,17 @@ WUPSConfigAPICallbackStatus ConfigMenuOpenedCallback(WUPSConfigCategoryHandle ro
         return WUPSCONFIG_API_CALLBACK_RESULT_ERROR;
     }
 
+    if (WUPSConfigItemMultipleValues_AddToCategory(root,
+                                                    "dual_drc_video_feed_mode",
+                                                    "Video Feed",
+                                                    static_cast<int>(kDefaultVideoFeedMode),
+                                                    static_cast<int>(sVideoFeedMode),
+                                                    sVideoFeedValues,
+                                                    sizeof(sVideoFeedValues) / sizeof(sVideoFeedValues[0]),
+                                                    &VideoFeedModeChanged) != WUPSCONFIG_API_RESULT_SUCCESS) {
+        return WUPSCONFIG_API_CALLBACK_RESULT_ERROR;
+    }
+
     if (WUPSConfigItemBoolean_AddToCategoryEx(root,
                                                "dual_drc_performance_mode",
                                                "Performance Mode (disable DRC1 video)",
@@ -928,6 +1082,40 @@ WUPSConfigAPICallbackStatus ConfigMenuOpenedCallback(WUPSConfigCategoryHandle ro
                                                "On",
                                                "Off") != WUPSCONFIG_API_RESULT_SUCCESS) {
         return WUPSCONFIG_API_CALLBACK_RESULT_ERROR;
+    }
+
+    {
+        static const char *const kControlsHelpLines[] = {
+                "----------In game button Controls----------",
+                "Press Left Stick and Right Stick together to toggle controller mode",
+                "Press Right D-Pad + Y button to toggle video mode",
+        };
+        for (const char *line : kControlsHelpLines) {
+            WUPSConfigItemHandle itemHandle;
+            WUPSConfigAPIItemCallbacksV2 callbacks = {
+                    .getCurrentValueDisplay         = &StaticText_getCurrentValueDisplay,
+                    .getCurrentValueSelectedDisplay = &StaticText_getCurrentValueSelectedDisplay,
+                    .onSelected                     = nullptr,
+                    .restoreDefault                 = nullptr,
+                    .isMovementAllowed              = nullptr,
+                    .onCloseCallback                = nullptr,
+                    .onInput                        = nullptr,
+                    .onInputEx                      = nullptr,
+                    .onDelete                       = nullptr,
+            };
+            WUPSConfigAPIItemOptionsV2 options = {
+                    .displayName = line,
+                    .context     = nullptr,
+                    .callbacks   = callbacks,
+            };
+            if (WUPSConfigAPI_Item_Create(options, &itemHandle) != WUPSCONFIG_API_RESULT_SUCCESS) {
+                return WUPSCONFIG_API_CALLBACK_RESULT_ERROR;
+            }
+            if (WUPSConfigAPI_Category_AddItem(root, itemHandle) != WUPSCONFIG_API_RESULT_SUCCESS) {
+                WUPSConfigAPI_Item_Destroy(itemHandle);
+                return WUPSCONFIG_API_CALLBACK_RESULT_ERROR;
+            }
+        }
     }
 
     {
