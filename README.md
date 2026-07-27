@@ -14,15 +14,16 @@ THIS APP IS IN BETA, expect lots of bugs.
 
 • Reload Wii U button to easily connect both of the gamepads
 
+• Switch video source between Gamepad and TV.
+
 # Controls
 • Press left stick and right stick together to change the controller mode between Seperate and Mirrored.
 
+• Press Right D-Pad and Y button to switch video source between Gamepad and TV.
+
 # Usage
-You can get it directly from the Homebrew app store.
 
-[<img width="1080" height="300" alt="HB App Store shortcut link" src="https://github.com/user-attachments/assets/b665a650-9f9b-4db0-a980-c326a1da74b5" style="width:35%; height:auto;" />](https://hb-app.store/wiiu/DualU)
-
- Or you can download the zip from https://github.com/tech-will/Dual-U/releases/tag/Official-Release and extract to the root of your Wii U SD card.
+Or you can download the zip from https://github.com/tech-will/Dual-U/releases/tag/Official-Release and extract to the root of your Wii U SD card.
 
 To pair, first go into the pairing options menu by going into the Aroma Plugin Menu and select Dual U. Then click on pair and it should say pairing under pairing status. There is a time out of 120 seconds so you don't get stuck. Once paired, it should work but if it doesn't, restart the console. You don't have to do this again
 
@@ -36,16 +37,12 @@ second gamepad in the Quick Start menu which somehow controls the Wii U.
 # Known Issues
 • Blocks the Aroma Plugin Menu opening on the home menu but not in games.
 
-• Requires restarts multiple times to turn the plugin off
-
-• In some games, the Seperate controller function doesn't work
-
-• Video ether doesn't work or is glitched out
-
 • Slows down the console a lot
 # Photos:
-![WIN_20260307_20_13_33_Pro](https://github.com/user-attachments/assets/f1980eca-90db-4239-b6de-a7dcbe298b8a)
-Broken video but works with two gamepads
+
+<img width="3736" height="2802" alt="WIN_20260727_10_51_25_Pro" src="https://github.com/user-attachments/assets/83bde566-835c-4389-a65b-91cf33852569" />
+A demo of it working.
+
 
 
 Thanks to GaryOderNichts who made the app MultiDRCSpaceDemo which I based the pairing UI and activating Dual gamepad support.
