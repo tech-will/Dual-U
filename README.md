@@ -6,24 +6,24 @@ Back in E3 2012, Nintendo announced that two Wii U gamepads can be connected to 
 
 THIS APP IS IN BETA, expect lots of bugs.
 # Features
-• Pair the Wii U gamepads
+• Pair the Wii U gamepads.
 
-• Turn the plugin on and off
+• Turn the plugin on and off.
 
-• Switch controller mode between mirrored (acts as the same controller for both Wii U gamepads) and Separate (The second gamepad pretends to be a Wii U pro controller)
+• Switch controller mode between mirrored (acts as the same controller for both Wii U gamepads) and Separate (The second gamepad pretends to be a Wii U pro controller).
 
-• Reload Wii U button to easily connect both of the gamepads
+• Reload Wii U button to easily connect both of the gamepads.
 
 • Switch video source between Gamepad and TV.
 
 # Controls
-• Press left stick and right stick together to change the controller mode between Seperate and Mirrored.
+• Press left stick and right stick together to change the controller mode between Separate and Mirrored.
 
 • Press Right D-Pad and Y button to switch video source between Gamepad and TV.
 
 # Usage
 
-Or you can download the zip from https://github.com/tech-will/Dual-U/releases/tag/Official-Release and extract to the root of your Wii U SD card.
+You can download the zip from https://github.com/tech-will/Dual-U/releases/tag/Official-Release and extract to the root of your Wii U SD card.
 
 To pair, first go into the pairing options menu by going into the Aroma Plugin Menu and select Dual U. Then click on pair and it should say pairing under pairing status. There is a time out of 120 seconds so you don't get stuck. Once paired, it should work but if it doesn't, restart the console. You don't have to do this again
 
@@ -37,7 +37,7 @@ second gamepad in the Quick Start menu which somehow controls the Wii U.
 # Known Issues
 • Blocks the Aroma Plugin Menu opening on the home menu but not in games.
 
-• Slows down the console a lot
+• Slows down the console a lot.
 # Photos:
 
 <img width="3736" height="2802" alt="WIN_20260727_10_51_25_Pro" src="https://github.com/user-attachments/assets/83bde566-835c-4389-a65b-91cf33852569" />
