@@ -23,7 +23,7 @@ THIS APP IS IN BETA, expect lots of bugs.
 
 You can get it form the HB app store:
 https://hb-app.store/wiiu/DualU
-Or you can download the zip from https://github.com/tech-will/Dual-U/releases/tag/Official-Release and extract to the root of your Wii U SD card.
+Or you can download the zip from https://github.com/tech-will/Dual-U/releases and extract to the root of your Wii U SD card.
 
 To pair, first go into the pairing options menu by going into the Aroma Plugin Menu and select Dual U. Then click on pair and it should say pairing under pairing status. There is a time out of 120 seconds so you don't get stuck. Once paired, it should work but if it doesn't, restart the console. You don't have to do this again
 
