@@ -19,7 +19,7 @@
 
 WUPS_PLUGIN_NAME("Dual U");
 WUPS_PLUGIN_DESCRIPTION("Pair and use a second Wii U gamepad");
-WUPS_PLUGIN_VERSION("v0.7");
+WUPS_PLUGIN_VERSION("v0.8");
 WUPS_PLUGIN_AUTHOR("tech-will");
 WUPS_PLUGIN_LICENSE("MIT");
 
@@ -766,6 +766,21 @@ DECL_FUNCTION(int32_t, VPADRead, VPADChan chan, VPADStatus *buffers, uint32_t co
             buffers[i].angle = drc1.angle;
             buffers[i].direction = drc1.direction;
             buffers[i].mag = drc1.mag;
+        }
+
+        // Touch: wherever you press on the second GamePad presses on the
+        // first. Only one touch state can be reported at a time (VPAD
+        // isn't multi-touch across pads), so DRC1 takes priority whenever
+        // it's actually being touched -- forwarding its whole touch state
+        // (current position plus both filtered/smoothed levels, so
+        // whichever field a game reads stays internally consistent)
+        // rather than just tpNormal alone. When DRC1 isn't touched, DRC0's
+        // own touchscreen is left completely alone and keeps working
+        // normally on its own.
+        if (drc1.tpNormal.touched != 0) {
+            buffers[i].tpNormal = drc1.tpNormal;
+            buffers[i].tpFiltered1 = drc1.tpFiltered1;
+            buffers[i].tpFiltered2 = drc1.tpFiltered2;
         }
     }
     sVPADMergedCalls++;
