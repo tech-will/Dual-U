@@ -12,8 +12,6 @@ THIS APP IS IN BETA, expect lots of bugs.
 
 • Switch controller mode between mirrored (acts as the same controller for both Wii U gamepads) and Separate (The second gamepad pretends to be a Wii U pro controller)
 
-• Reload Wii U button to easily connect both of the gamepads
-
 • Switch video source between Gamepad and TV.
 
 # Controls
@@ -27,9 +25,7 @@ Or you can download the zip from https://github.com/tech-will/Dual-U/releases/ta
 
 To pair, first go into the pairing options menu by going into the Aroma Plugin Menu and select Dual U. Then click on pair and it should say pairing under pairing status. There is a time out of 120 seconds so you don't get stuck. Once paired, it should work but if it doesn't, restart the console. You don't have to do this again
 
-To turn the plugin on, go into the Dual U plugin in the Aroma Plugin Menu and set Plugin Enabled to On. Then press Reload Console. Then both of the gamepads should connect. If it doesn't, restart the console.
-
-Turning the console off will disable the plugin. If this doesn't happen, try restarting the console and it should work.
+To turn the plugin on, go into the Dual U plugin in the Aroma Plugin Menu and set Plugin Enabled to On. Then restart the console.
 
 The "Performance Mode" toggle causes the second gamepad to disconnect under normal use. To fix this, keep the 
 second gamepad in the Quick Start menu which somehow controls the Wii U.
