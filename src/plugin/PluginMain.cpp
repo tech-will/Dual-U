@@ -9,7 +9,6 @@
 #include <nsysccr/cdc.h>
 #include <padscore/kpad.h>
 #include <padscore/wpad.h>
-#include <sysapp/launch.h>
 #include <vpad/input.h>
 #include <wups.h>
 #include <wups/function_patching.h>
@@ -20,7 +19,7 @@
 
 WUPS_PLUGIN_NAME("Dual U");
 WUPS_PLUGIN_DESCRIPTION("Pair and use a second Wii U gamepad");
-WUPS_PLUGIN_VERSION("v0.6");
+WUPS_PLUGIN_VERSION("v0.7");
 WUPS_PLUGIN_AUTHOR("tech-will");
 WUPS_PLUGIN_LICENSE("MIT");
 
@@ -38,18 +37,32 @@ enum VideoFeedMode : uint32_t {
     VIDEO_FEED_GAMEPAD = 1,
 };
 
+enum MotionMode : uint32_t {
+    MOTION_MODE_OFF = 0,
+    MOTION_MODE_MIRRORED = 1,
+    MOTION_MODE_SPLIT_WIIMOTE = 2,
+};
+
 constexpr bool kDefaultPluginEnabled = false;
 constexpr uint32_t kDefaultControllerMode = CONTROLLER_MODE_SEPARATE_PRO;
 constexpr uint32_t kDefaultVideoFeedMode = VIDEO_FEED_GAMEPAD;
+constexpr uint32_t kDefaultMotionMode = MOTION_MODE_MIRRORED;
 constexpr bool kDefaultPerformanceModeEnabled = false;
 constexpr const char *kStorageKeyEnabled = "dual_drc_enabled";
 constexpr const char *kStorageKeyControllerMode = "dual_drc_controller_mode";
 constexpr const char *kStorageKeyVideoFeedMode = "dual_drc_video_feed_mode";
-constexpr const char *kStorageKeyEnableOnce = "dual_drc_enable_once";
+constexpr const char *kStorageKeyMotionMode = "dual_drc_motion_mode";
 constexpr const char *kStorageKeyPerformanceMode = "dual_drc_performance_mode";
 constexpr uint32_t kControllerModeToggleCombo = VPAD_BUTTON_STICK_L | VPAD_BUTTON_STICK_R;
 constexpr uint32_t kVideoFeedToggleCombo = VPAD_BUTTON_RIGHT | VPAD_BUTTON_Y;
 constexpr WPADChan kSyntheticControllerChannel = WPAD_CHAN_0;
+// A bare (no MotionPlus) Wii Remote for "Split Wii Remote" motion mode.
+// Deliberately a different channel than the synthetic Pro Controller so
+// the two can coexist if Controller Mode and Motion Mode are both active
+// at once. Note: this does mean a *real* Wii Remote actually paired on
+// channel 1 would collide with it, same tradeoff the existing synthetic
+// Pro Controller already accepts on channel 0.
+constexpr WPADChan kSyntheticWiimoteChannel = WPAD_CHAN_1;
 
 bool sPluginEnabled = kDefaultPluginEnabled;
 bool sExperimentalPatchEnabled = true;
@@ -57,6 +70,7 @@ bool sPerformanceModeEnabled = kDefaultPerformanceModeEnabled;
 
 uint32_t sControllerMode = kDefaultControllerMode;
 uint32_t sVideoFeedMode = kDefaultVideoFeedMode;
+uint32_t sMotionMode = kDefaultMotionMode;
 
 ConfigItemMultipleValuesPair sControllerModeValues[] = {
         {CONTROLLER_MODE_MIRRORED, "Mirrored"},
@@ -68,6 +82,12 @@ ConfigItemMultipleValuesPair sVideoFeedValues[] = {
     {VIDEO_FEED_GAMEPAD, "Gamepad Video"},
 };
 
+ConfigItemMultipleValuesPair sMotionModeValues[] = {
+        {MOTION_MODE_OFF, "Off"},
+    {MOTION_MODE_MIRRORED, "Mirrored"},
+    {MOTION_MODE_SPLIT_WIIMOTE, "Split Wii Remote"},
+};
+
 DrcPairing sPairing;
 int32_t sLastSetMultiResult = 0;
 int32_t sLastSetStateResult = 0;
@@ -77,6 +97,21 @@ uint8_t sLastMultiValue = 1;
 uint32_t sGX2HookCalls = 0;
 uint32_t sGX2SetDRCEnableCalls = 0;
 uint32_t sGX2SetDRCBufferCalls = 0;
+// GX2SetDRCBuffer is only called once, near a process's own startup, to
+// establish the ACTUAL allocated size/mode of its scan buffer -- it is not
+// re-called every frame. If "Plugin Enabled" gets toggled on mid-session
+// (exactly what happens the moment you check the box in the config menu),
+// the buffer that's already been allocated is still sized for SINGLE mode,
+// even though sPluginEnabled is now true. Without this flag,
+// GX2CopyColorBufferToScanBuffer would immediately start writing a second
+// copy to GX2_SCAN_TARGET_DRC1 every frame -- into memory that was never
+// allocated for it. That out-of-bounds write, happening continuously from
+// the moment the toggle flips, is a far more likely explanation for a
+// freeze than any reload-timing race. This flag is only set true when
+// GX2SetDRCBuffer itself actually observed the plugin enabled and forced
+// DOUBLE mode, so the extra copy only ever targets a buffer we know was
+// really sized for it.
+bool sDrcBufferIsDoubleSized = false;
 uint32_t sGX2CalcDRCSizeCalls = 0;
 uint32_t sGX2CopyToScanBufferCalls = 0;
 uint32_t sGX2CopyToDrc1Calls = 0;
@@ -97,19 +132,34 @@ uint32_t sKPADReadCalls = 0;
 uint32_t sKPADInjectedSamples = 0;
 uint32_t sKPADInjectFailures = 0;
 uint32_t sLastSeparateHold = 0;
+uint32_t sLastWiimoteHold = 0;
+// Shared cache so the three consumers of DRC1's raw VPAD data (button/
+// stick/motion merging in Mirrored controller mode, the synthetic Pro
+// Controller in Separate controller mode, and the synthetic Wii Remote in
+// Split motion mode) never read VPAD_CHAN_1 more than once per frame.
+// VPADRead only buffers a small backlog of samples, so reading it twice
+// in the same frame can starve whichever caller asks second -- exactly
+// the kind of bug that made DRC1's combos unreliable before. The cache is
+// invalidated at the top of every VPADRead(chan=0) call, which reliably
+// happens once per game frame.
+VPADStatus sCachedDrc1Status = {};
+VPADReadError sCachedDrc1Error = VPAD_READ_UNINITIALIZED;
+int32_t sCachedDrc1ReadCount = 0;
+bool sDrc1CacheValidThisFrame = false;
 bool sControllerModeToggleComboLatched = false;
+bool sControllerModeToggleComboLatchedDrc1 = false;
 bool sVideoFeedToggleComboLatched = false;
-bool sReloadMenuRequested = false;
+bool sVideoFeedToggleComboLatchedDrc1 = false;
 uint8_t sSyntheticRumblePatternOn = 0xFF;
 uint8_t sSyntheticRumblePatternOff = 0x00;
 
 void ApplyDualDrcMode(bool enabled);
 
 void SaveSettingsToStorage() {
-    // Keep enabled state volatile so power cycles always recover to default off.
-    WUPSStorageAPI_StoreBool(nullptr, kStorageKeyEnabled, kDefaultPluginEnabled);
+    WUPSStorageAPI_StoreBool(nullptr, kStorageKeyEnabled, sPluginEnabled);
     WUPSStorageAPI_StoreU32(nullptr, kStorageKeyControllerMode, sControllerMode);
     WUPSStorageAPI_StoreU32(nullptr, kStorageKeyVideoFeedMode, sVideoFeedMode);
+    WUPSStorageAPI_StoreU32(nullptr, kStorageKeyMotionMode, sMotionMode);
     WUPSStorageAPI_StoreBool(nullptr, kStorageKeyPerformanceMode, sPerformanceModeEnabled);
     WUPSStorageAPI_SaveStorage(false);
 }
@@ -118,13 +168,6 @@ void LoadSettingsFromStorage() {
     bool pluginEnabled = kDefaultPluginEnabled;
     if (WUPSStorageAPI_GetBool(nullptr, kStorageKeyEnabled, &pluginEnabled) == WUPS_STORAGE_ERROR_SUCCESS) {
         sPluginEnabled = pluginEnabled;
-    }
-
-    bool enableOnce = false;
-    if (WUPSStorageAPI_GetBool(nullptr, kStorageKeyEnableOnce, &enableOnce) == WUPS_STORAGE_ERROR_SUCCESS && enableOnce) {
-        sPluginEnabled = true;
-        WUPSStorageAPI_StoreBool(nullptr, kStorageKeyEnableOnce, false);
-        WUPSStorageAPI_SaveStorage(false);
     }
 
     sExperimentalPatchEnabled = true;
@@ -143,6 +186,13 @@ void LoadSettingsFromStorage() {
         }
     }
 
+    uint32_t motionMode = kDefaultMotionMode;
+    if (WUPSStorageAPI_GetU32(nullptr, kStorageKeyMotionMode, &motionMode) == WUPS_STORAGE_ERROR_SUCCESS) {
+        if (motionMode <= MOTION_MODE_SPLIT_WIIMOTE) {
+            sMotionMode = motionMode;
+        }
+    }
+
     bool performanceMode = kDefaultPerformanceModeEnabled;
     if (WUPSStorageAPI_GetBool(nullptr, kStorageKeyPerformanceMode, &performanceMode) == WUPS_STORAGE_ERROR_SUCCESS) {
         sPerformanceModeEnabled = performanceMode;
@@ -158,9 +208,9 @@ void ToggleControllerMode() {
     SaveSettingsToStorage();
 }
 
-void CheckControllerModeToggleCombo(const VPADStatus *buffers, int32_t readCount) {
+void CheckControllerModeToggleCombo(const VPADStatus *buffers, int32_t readCount, bool &comboLatched) {
     if (buffers == nullptr || readCount <= 0) {
-        sControllerModeToggleComboLatched = false;
+        comboLatched = false;
         return;
     }
 
@@ -172,10 +222,10 @@ void CheckControllerModeToggleCombo(const VPADStatus *buffers, int32_t readCount
         }
     }
 
-    if (comboPressed && !sControllerModeToggleComboLatched) {
+    if (comboPressed && !comboLatched) {
         ToggleControllerMode();
     }
-    sControllerModeToggleComboLatched = comboPressed;
+    comboLatched = comboPressed;
 }
 
 void ToggleVideoFeedMode() {
@@ -187,9 +237,9 @@ void ToggleVideoFeedMode() {
     SaveSettingsToStorage();
 }
 
-void CheckVideoFeedToggleCombo(const VPADStatus *buffers, int32_t readCount) {
+void CheckVideoFeedToggleCombo(const VPADStatus *buffers, int32_t readCount, bool &comboLatched) {
     if (buffers == nullptr || readCount <= 0) {
-        sVideoFeedToggleComboLatched = false;
+        comboLatched = false;
         return;
     }
 
@@ -201,10 +251,10 @@ void CheckVideoFeedToggleCombo(const VPADStatus *buffers, int32_t readCount) {
         }
     }
 
-    if (comboPressed && !sVideoFeedToggleComboLatched) {
+    if (comboPressed && !comboLatched) {
         ToggleVideoFeedMode();
     }
-    sVideoFeedToggleComboLatched = comboPressed;
+    comboLatched = comboPressed;
 }
 
 bool IsMirroredMode() {
@@ -218,6 +268,29 @@ bool IsSeparateMode() {
 bool IsSyntheticControllerChannel(WPADChan chan) {
     return chan == kSyntheticControllerChannel;
 }
+
+bool IsSplitWiimoteMode() {
+    return sMotionMode == MOTION_MODE_SPLIT_WIIMOTE;
+}
+
+bool IsSyntheticWiimoteChannel(WPADChan chan) {
+    return chan == kSyntheticWiimoteChannel;
+}
+
+// Shared by every consumer of DRC1's raw VPAD data (button/stick/motion
+// merging, the synthetic Pro Controller, and the synthetic Wii Remote) so
+// VPAD_CHAN_1 is only ever read once per frame. See sDrc1CacheValidThisFrame
+// for why: reading it twice in one frame can starve whichever caller asks
+// second. Also checks DRC1's own combo presses exactly once per frame,
+// since this is the one place a fresh DRC1 sample is guaranteed to exist.
+// Returns true and fills outStatus if a valid sample is available.
+//
+// Forward-declared here, defined after the VPADRead hook below: its body
+// needs real_VPADRead, which only exists once DECL_FUNCTION(VPADRead, ...)
+// has run, but VPADRead's own hook body also calls this function -- a
+// genuine circular need, resolved the standard way with a prototype now
+// and the real definition later.
+bool FetchDrc1Vpad(VPADStatus *outStatus);
 
 void FillSyntheticWpadInfo(WPADInfo *outInfo) {
     if (outInfo == nullptr) {
@@ -289,6 +362,11 @@ void VideoFeedModeChanged(ConfigItemMultipleValues *, uint32_t newValue) {
     SaveSettingsToStorage();
 }
 
+void MotionModeChanged(ConfigItemMultipleValues *, uint32_t newValue) {
+    sMotionMode = newValue;
+    SaveSettingsToStorage();
+}
+
 void PerformanceModeChanged(ConfigItemBoolean *, bool newValue) {
     sPerformanceModeEnabled = newValue;
     SaveSettingsToStorage();
@@ -347,33 +425,10 @@ bool BuildSyntheticKpadFromDrc1(KPADStatus *outStatus) {
     }
 
     VPADStatus drc1 = {};
-    VPADReadError drc1Error = VPAD_READ_SUCCESS;
-    sVPADDrc1ReadAttempts++;
-    int32_t drc1ReadCount = VPADRead(VPAD_CHAN_1, &drc1, 1, &drc1Error);
-    sLastDrc1ReadCount = drc1ReadCount;
-    sLastDrc1ReadError = drc1Error;
-    if (drc1ReadCount <= 0 || drc1Error != VPAD_READ_SUCCESS) {
-        switch (drc1Error) {
-            case VPAD_READ_NO_SAMPLES:
-                sVPADDrc1NoSamples++;
-                break;
-            case VPAD_READ_INVALID_CONTROLLER:
-                sVPADDrc1Invalid++;
-                break;
-            case VPAD_READ_BUSY:
-                sVPADDrc1Busy++;
-                break;
-            case VPAD_READ_UNINITIALIZED:
-                sVPADDrc1Uninitialized++;
-                break;
-            default:
-                sVPADDrc1OtherError++;
-                break;
-        }
+    if (!FetchDrc1Vpad(&drc1)) {
         return false;
     }
 
-    sVPADDrc1ReadSuccess++;
     *outStatus = {};
 
     if (sControllerMode == CONTROLLER_MODE_SEPARATE_PRO) {
@@ -405,6 +460,99 @@ bool BuildSyntheticKpadFromDrc1(KPADStatus *outStatus) {
     outStatus->error = KPAD_ERROR_OK;
     outStatus->posValid = 0;
     sLastSeparateHold = hold;
+    return true;
+}
+
+// "Split Wii Remote" motion mode: DRC1 becomes a standalone synthetic Wii
+// Remote with Motion Plus, reporting real gyroscope data in addition to
+// the accelerometer, decoupled from whatever Controller Mode is doing with
+// DRC1's buttons/sticks. This is independent of Controller Mode by design
+// -- it can layer on top of either Mirrored or Separate, the way a real
+// second Wii Remote would sit alongside normal GamePad play for
+// pointer/motion-only input.
+bool BuildSyntheticWiimoteFromDrc1Motion(KPADStatus *outStatus) {
+    if (outStatus == nullptr || !sPluginEnabled || !IsSplitWiimoteMode()) {
+        return false;
+    }
+
+    VPADStatus drc1 = {};
+    if (!FetchDrc1Vpad(&drc1)) {
+        return false;
+    }
+
+    *outStatus = {};
+
+    // A handful of buttons are still mapped across so the synthetic
+    // Wiimote is actually usable (A/B/1/2/+/-/Home/D-pad), reusing the
+    // same mapping the Separate-mode Pro Controller path uses for Core
+    // format. Its own latch keeps this independent of the Pro Controller
+    // synthesis, in case both are active on their separate channels at
+    // once.
+    uint32_t hold = MapVpadButtonsToWpadCore(drc1.hold);
+    outStatus->hold = hold;
+    outStatus->trigger = (hold & ~sLastWiimoteHold);
+    outStatus->release = ((~hold) & sLastWiimoteHold);
+    outStatus->extensionType = WPAD_EXT_MPLUS;
+    outStatus->format = WPAD_FMT_MPLUS;
+    outStatus->error = KPAD_ERROR_OK;
+    // No sensor bar to point at, so no valid IR position/angle/distance --
+    // exactly like a real Wii Remote reports when it can't see the bar.
+    outStatus->posValid = 0;
+
+    // Base accelerometer, same as a bare Wiimote would report. See the
+    // axis-mapping note below -- it applies here too.
+    outStatus->acc.x = drc1.accelorometer.acc.x;
+    outStatus->acc.y = drc1.accelorometer.acc.y;
+    outStatus->acc.z = drc1.accelorometer.acc.z;
+    outStatus->accMagnitude = drc1.accelorometer.magnitude;
+    outStatus->accVariation = drc1.accelorometer.variation;
+
+    // Motion Plus adds real gyroscope data on top of the base
+    // accelerometer -- this is the actual point of reporting as MPLUS
+    // instead of a bare Wiimote: true 1:1 rotation tracking rather than
+    // just tilt-from-gravity. KPADStatus::mplus.acc is documented as
+    // "angular acceleration" (i.e. the gyro channel, not linear
+    // acceleration -- that's the separate .acc field above), so DRC1's
+    // real gyro maps directly onto it. .angles is the integrated
+    // orientation Motion Plus derives from that gyro over time, which
+    // VPAD's own .angle is a reasonable analog of (both are the device's
+    // own fused/processed orientation estimate). dirX/dirY/dirZ together
+    // form a 3x3 orientation basis (each a KPADVec3D, matching VPAD's
+    // .direction field-for-field, just flattened to three top-level
+    // fields instead of nested under one), so they copy straight across.
+    //
+    // Axis mapping / "facing up" assumption: per WiiBrew's Wiimote
+    // documentation, a real Wii Remote's Y axis is its long axis (the tip
+    // with the IR sensor vs. the bottom near the wrist strap), Z is
+    // perpendicular to the button face, and X is width (left/right).
+    // Held upright pointing at the screen -- the standard grip almost all
+    // motion-aware software assumes by default -- gravity mostly loads
+    // onto Y, with Z/X reflecting forward/side tilt. This maps DRC1's
+    // sensors straight across (X->X, Y->Y, Z->Z, no sign flips), on the
+    // assumption Nintendo kept a consistent axis convention across its
+    // own motion-sensing controllers (Wiimote and GamePad alike). I can't
+    // verify the exact sign convention without hardware in hand, though,
+    // so if this reads upside-down, sideways, or mirrored on your end,
+    // this is the block to adjust -- tell me exactly what you're seeing
+    // (e.g. "tilting the GamePad forward tilts the Wiimote back") and I
+    // can flip the specific axis/sign that's off.
+    outStatus->mplus.acc.x = drc1.gyro.x;
+    outStatus->mplus.acc.y = drc1.gyro.y;
+    outStatus->mplus.acc.z = drc1.gyro.z;
+    outStatus->mplus.angles.x = drc1.angle.x;
+    outStatus->mplus.angles.y = drc1.angle.y;
+    outStatus->mplus.angles.z = drc1.angle.z;
+    outStatus->mplus.dirX.x = drc1.direction.x.x;
+    outStatus->mplus.dirX.y = drc1.direction.x.y;
+    outStatus->mplus.dirX.z = drc1.direction.x.z;
+    outStatus->mplus.dirY.x = drc1.direction.y.x;
+    outStatus->mplus.dirY.y = drc1.direction.y.y;
+    outStatus->mplus.dirY.z = drc1.direction.y.z;
+    outStatus->mplus.dirZ.x = drc1.direction.z.x;
+    outStatus->mplus.dirZ.y = drc1.direction.z.y;
+    outStatus->mplus.dirZ.z = drc1.direction.z.z;
+
+    sLastWiimoteHold = hold;
     return true;
 }
 
@@ -471,9 +619,11 @@ DECL_FUNCTION(void,
                              GX2_DRC_RENDER_MODE_DOUBLE,
                              surfaceFormat,
                              bufferingMode);
+        sDrcBufferIsDoubleSized = true;
         return;
     }
     real_GX2SetDRCBuffer(buffer, size, drcRenderMode, surfaceFormat, bufferingMode);
+    sDrcBufferIsDoubleSized = false;
 }
 WUPS_MUST_REPLACE_FOR_PROCESS(GX2SetDRCBuffer,
                               WUPS_LOADER_LIBRARY_GX2,
@@ -494,6 +644,16 @@ DECL_FUNCTION(void, GX2CopyColorBufferToScanBuffer, const GX2ColorBuffer *colorB
     }
 
     if (!sPluginEnabled || !sExperimentalPatchEnabled || sPerformanceModeEnabled) {
+        return;
+    }
+    if (!sDrcBufferIsDoubleSized) {
+        // The active scan buffer hasn't actually been (re)established in
+        // double mode yet -- GX2SetDRCBuffer only runs once near process
+        // startup, so this happens whenever the plugin gets enabled
+        // mid-session. Skip the extra copy entirely rather than write
+        // into memory the process never allocated for it. This resolves
+        // itself automatically the next time this process's GX2 buffers
+        // get set up (e.g. after actually relaunching), no reload needed.
         return;
     }
 
@@ -549,8 +709,12 @@ DECL_FUNCTION(int32_t, VPADRead, VPADChan chan, VPADStatus *buffers, uint32_t co
     int32_t readCount = real_VPADRead(chan, buffers, count, outError);
 
     if (chan == VPAD_CHAN_0) {
-        CheckControllerModeToggleCombo(buffers, readCount);
-        CheckVideoFeedToggleCombo(buffers, readCount);
+        // The game reliably calls VPADRead(chan=0) once per frame, so
+        // treat this as the "new frame" boundary for the shared DRC1
+        // fetch cache (see FetchDrc1Vpad).
+        sDrc1CacheValidThisFrame = false;
+        CheckControllerModeToggleCombo(buffers, readCount, sControllerModeToggleComboLatched);
+        CheckVideoFeedToggleCombo(buffers, readCount, sVideoFeedToggleComboLatched);
     }
 
     if (!sPluginEnabled || !sExperimentalPatchEnabled || !IsMirroredMode()) {
@@ -560,53 +724,48 @@ DECL_FUNCTION(int32_t, VPADRead, VPADChan chan, VPADStatus *buffers, uint32_t co
         return readCount;
     }
 
-    const uint32_t drc1Count = std::min<uint32_t>(count, 4);
-    VPADStatus drc1Buffer[4] = {};
-    VPADReadError drc1Error = VPAD_READ_SUCCESS;
-    sVPADDrc1ReadAttempts++;
-    int32_t drc1ReadCount = real_VPADRead(VPAD_CHAN_1, drc1Buffer, drc1Count, &drc1Error);
-    sLastDrc1ReadCount = drc1ReadCount;
-    sLastDrc1ReadError = drc1Error;
-    if (drc1ReadCount <= 0 || drc1Error != VPAD_READ_SUCCESS) {
-        switch (drc1Error) {
-            case VPAD_READ_NO_SAMPLES:
-                sVPADDrc1NoSamples++;
-                break;
-            case VPAD_READ_INVALID_CONTROLLER:
-                sVPADDrc1Invalid++;
-                break;
-            case VPAD_READ_BUSY:
-                sVPADDrc1Busy++;
-                break;
-            case VPAD_READ_UNINITIALIZED:
-                sVPADDrc1Uninitialized++;
-                break;
-            default:
-                sVPADDrc1OtherError++;
-                break;
-        }
+    VPADStatus drc1 = {};
+    if (!FetchDrc1Vpad(&drc1)) {
         return readCount;
     }
-    sVPADDrc1ReadSuccess++;
 
     uint32_t samplesToMerge = std::min<uint32_t>(count, static_cast<uint32_t>(readCount));
-    samplesToMerge = std::min<uint32_t>(samplesToMerge, static_cast<uint32_t>(drc1ReadCount));
     for (uint32_t i = 0; i < samplesToMerge; i++) {
-        buffers[i].hold |= drc1Buffer[i].hold;
-        buffers[i].trigger |= drc1Buffer[i].trigger;
-        buffers[i].release |= drc1Buffer[i].release;
+        buffers[i].hold |= drc1.hold;
+        buffers[i].trigger |= drc1.trigger;
+        buffers[i].release |= drc1.release;
 
-        if (std::abs(drc1Buffer[i].leftStick.x) > std::abs(buffers[i].leftStick.x)) {
-            buffers[i].leftStick.x = drc1Buffer[i].leftStick.x;
+        if (std::abs(drc1.leftStick.x) > std::abs(buffers[i].leftStick.x)) {
+            buffers[i].leftStick.x = drc1.leftStick.x;
         }
-        if (std::abs(drc1Buffer[i].leftStick.y) > std::abs(buffers[i].leftStick.y)) {
-            buffers[i].leftStick.y = drc1Buffer[i].leftStick.y;
+        if (std::abs(drc1.leftStick.y) > std::abs(buffers[i].leftStick.y)) {
+            buffers[i].leftStick.y = drc1.leftStick.y;
         }
-        if (std::abs(drc1Buffer[i].rightStick.x) > std::abs(buffers[i].rightStick.x)) {
-            buffers[i].rightStick.x = drc1Buffer[i].rightStick.x;
+        if (std::abs(drc1.rightStick.x) > std::abs(buffers[i].rightStick.x)) {
+            buffers[i].rightStick.x = drc1.rightStick.x;
         }
-        if (std::abs(drc1Buffer[i].rightStick.y) > std::abs(buffers[i].rightStick.y)) {
-            buffers[i].rightStick.y = drc1Buffer[i].rightStick.y;
+        if (std::abs(drc1.rightStick.y) > std::abs(buffers[i].rightStick.y)) {
+            buffers[i].rightStick.y = drc1.rightStick.y;
+        }
+
+        // Motion (accelerometer/gyro/angle/direction/magnetometer) is a
+        // coherent bundle describing how a single physical pad is
+        // oriented and moving, so it doesn't make sense to blend it
+        // field-by-field the way sticks are above. Instead, pick
+        // whichever pad is actively being moved right now and forward
+        // its whole motion state. `accelorometer.variation` is the
+        // length of the change in acceleration since the last sample,
+        // making it a much better "is this pad moving" signal than raw
+        // magnitude (which sits around 1g at rest from gravity alone).
+        // Only when Motion Mode is Mirrored -- Off skips this entirely,
+        // and Split Wii Remote forwards DRC1's motion on its own separate
+        // synthetic channel instead of blending it in here.
+        if (sMotionMode == MOTION_MODE_MIRRORED && drc1.accelorometer.variation > buffers[i].accelorometer.variation) {
+            buffers[i].accelorometer = drc1.accelorometer;
+            buffers[i].gyro = drc1.gyro;
+            buffers[i].angle = drc1.angle;
+            buffers[i].direction = drc1.direction;
+            buffers[i].mag = drc1.mag;
         }
     }
     sVPADMergedCalls++;
@@ -618,17 +777,72 @@ WUPS_MUST_REPLACE_FOR_PROCESS(VPADRead,
                               VPADRead,
                               WUPS_FP_TARGET_PROCESS_GAME_AND_MENU);
 
+bool FetchDrc1Vpad(VPADStatus *outStatus) {
+    if (!sDrc1CacheValidThisFrame) {
+        sVPADDrc1ReadAttempts++;
+        sCachedDrc1ReadCount = real_VPADRead(VPAD_CHAN_1, &sCachedDrc1Status, 1, &sCachedDrc1Error);
+        sLastDrc1ReadCount = sCachedDrc1ReadCount;
+        sLastDrc1ReadError = sCachedDrc1Error;
+        sDrc1CacheValidThisFrame = true;
+
+        if (sCachedDrc1ReadCount > 0 && sCachedDrc1Error == VPAD_READ_SUCCESS) {
+            sVPADDrc1ReadSuccess++;
+            // The second GamePad's own button combos (e.g. toggling
+            // Controller Mode or Video Feed) should work no matter which
+            // mode is currently active, so check them here -- this is the
+            // only place in the hook chain a fresh DRC1 sample is
+            // guaranteed to exist exactly once per frame.
+            CheckControllerModeToggleCombo(&sCachedDrc1Status, sCachedDrc1ReadCount, sControllerModeToggleComboLatchedDrc1);
+            CheckVideoFeedToggleCombo(&sCachedDrc1Status, sCachedDrc1ReadCount, sVideoFeedToggleComboLatchedDrc1);
+        } else {
+            switch (sCachedDrc1Error) {
+                case VPAD_READ_NO_SAMPLES:
+                    sVPADDrc1NoSamples++;
+                    break;
+                case VPAD_READ_INVALID_CONTROLLER:
+                    sVPADDrc1Invalid++;
+                    break;
+                case VPAD_READ_BUSY:
+                    sVPADDrc1Busy++;
+                    break;
+                case VPAD_READ_UNINITIALIZED:
+                    sVPADDrc1Uninitialized++;
+                    break;
+                default:
+                    sVPADDrc1OtherError++;
+                    break;
+            }
+        }
+    }
+
+    if (sCachedDrc1ReadCount <= 0 || sCachedDrc1Error != VPAD_READ_SUCCESS) {
+        return false;
+    }
+    if (outStatus != nullptr) {
+        *outStatus = sCachedDrc1Status;
+    }
+    return true;
+}
+
 DECL_FUNCTION(WPADError, WPADProbe, WPADChan channel, WPADExtensionType *outExtensionType) {
     WPADError result = real_WPADProbe(channel, outExtensionType);
 
-    if (!sPluginEnabled || !IsSeparateMode() || !IsSyntheticControllerChannel(channel)) {
+    if (!sPluginEnabled) {
         return result;
     }
-
-    if (outExtensionType != nullptr) {
-        *outExtensionType = WPAD_EXT_PRO_CONTROLLER;
+    if (IsSeparateMode() && IsSyntheticControllerChannel(channel)) {
+        if (outExtensionType != nullptr) {
+            *outExtensionType = WPAD_EXT_PRO_CONTROLLER;
+        }
+        return WPAD_ERROR_NONE;
     }
-    return WPAD_ERROR_NONE;
+    if (IsSplitWiimoteMode() && IsSyntheticWiimoteChannel(channel)) {
+        if (outExtensionType != nullptr) {
+            *outExtensionType = WPAD_EXT_MPLUS;
+        }
+        return WPAD_ERROR_NONE;
+    }
+    return result;
 }
 WUPS_MUST_REPLACE_FOR_PROCESS(WPADProbe,
                               WUPS_LOADER_LIBRARY_PADSCORE,
@@ -638,7 +852,12 @@ WUPS_MUST_REPLACE_FOR_PROCESS(WPADProbe,
 DECL_FUNCTION(WPADError, WPADGetInfo, WPADChan channel, WPADInfo *outInfo) {
     WPADError result = real_WPADGetInfo(channel, outInfo);
 
-    if (!sPluginEnabled || !IsSeparateMode() || !IsSyntheticControllerChannel(channel)) {
+    if (!sPluginEnabled) {
+        return result;
+    }
+    bool isSynthetic = (IsSeparateMode() && IsSyntheticControllerChannel(channel)) ||
+                        (IsSplitWiimoteMode() && IsSyntheticWiimoteChannel(channel));
+    if (!isSynthetic) {
         return result;
     }
 
@@ -653,7 +872,12 @@ WUPS_MUST_REPLACE_FOR_PROCESS(WPADGetInfo,
 DECL_FUNCTION(WPADError, WPADGetInfoAsync, WPADChan channel, WPADInfo *outInfo, WPADCallback callback) {
     WPADError result = real_WPADGetInfoAsync(channel, outInfo, callback);
 
-    if (!sPluginEnabled || !IsSeparateMode() || !IsSyntheticControllerChannel(channel)) {
+    if (!sPluginEnabled) {
+        return result;
+    }
+    bool isSynthetic = (IsSeparateMode() && IsSyntheticControllerChannel(channel)) ||
+                        (IsSplitWiimoteMode() && IsSyntheticWiimoteChannel(channel));
+    if (!isSynthetic) {
         return result;
     }
 
@@ -668,7 +892,12 @@ WUPS_MUST_REPLACE_FOR_PROCESS(WPADGetInfoAsync,
 DECL_FUNCTION(WPADError, WPADSetDataFormat, WPADChan channel, WPADDataFormat format) {
     WPADError result = real_WPADSetDataFormat(channel, format);
 
-    if (!sPluginEnabled || !IsSeparateMode() || !IsSyntheticControllerChannel(channel)) {
+    if (!sPluginEnabled) {
+        return result;
+    }
+    bool isSynthetic = (IsSeparateMode() && IsSyntheticControllerChannel(channel)) ||
+                        (IsSplitWiimoteMode() && IsSyntheticWiimoteChannel(channel));
+    if (!isSynthetic) {
         return result;
     }
 
@@ -682,21 +911,56 @@ WUPS_MUST_REPLACE_FOR_PROCESS(WPADSetDataFormat,
 DECL_FUNCTION(WPADDataFormat, WPADGetDataFormat, WPADChan channel) {
     WPADDataFormat result = real_WPADGetDataFormat(channel);
 
-    if (!sPluginEnabled || !IsSeparateMode() || !IsSyntheticControllerChannel(channel)) {
+    if (!sPluginEnabled) {
         return result;
     }
-
-    return WPAD_FMT_PRO_CONTROLLER;
+    if (IsSeparateMode() && IsSyntheticControllerChannel(channel)) {
+        return WPAD_FMT_PRO_CONTROLLER;
+    }
+    if (IsSplitWiimoteMode() && IsSyntheticWiimoteChannel(channel)) {
+        return WPAD_FMT_MPLUS;
+    }
+    return result;
 }
 WUPS_MUST_REPLACE_FOR_PROCESS(WPADGetDataFormat,
                               WUPS_LOADER_LIBRARY_PADSCORE,
                               WPADGetDataFormat,
                               WUPS_FP_TARGET_PROCESS_GAME_AND_MENU);
 
+// Some games check specifically for MotionPlus (rather than just reading
+// extensionType off WPADProbe/KPADReadEx) before trusting KPADStatus::mplus.
+// Report it truthfully present+active for the synthetic Wiimote channel.
+DECL_FUNCTION(int32_t, WPADIsMplsIntegrated, WPADChan channel) {
+    if (sPluginEnabled && IsSplitWiimoteMode() && IsSyntheticWiimoteChannel(channel)) {
+        return 1;
+    }
+    return real_WPADIsMplsIntegrated(channel);
+}
+WUPS_MUST_REPLACE_FOR_PROCESS(WPADIsMplsIntegrated,
+                              WUPS_LOADER_LIBRARY_PADSCORE,
+                              WPADIsMplsIntegrated,
+                              WUPS_FP_TARGET_PROCESS_GAME_AND_MENU);
+
+DECL_FUNCTION(KPADMplsMode, KPADGetMplsStatus, KPADChan chan) {
+    if (sPluginEnabled && IsSplitWiimoteMode() && IsSyntheticWiimoteChannel((WPADChan) chan)) {
+        return WPAD_MPLS_MODE_MPLS_ONLY;
+    }
+    return real_KPADGetMplsStatus(chan);
+}
+WUPS_MUST_REPLACE_FOR_PROCESS(KPADGetMplsStatus,
+                              WUPS_LOADER_LIBRARY_PADSCORE,
+                              KPADGetMplsStatus,
+                              WUPS_FP_TARGET_PROCESS_GAME_AND_MENU);
+
 DECL_FUNCTION(uint8_t, WPADGetBatteryLevel, WPADChan channel) {
     uint8_t result = real_WPADGetBatteryLevel(channel);
 
-    if (!sPluginEnabled || !IsSeparateMode() || !IsSyntheticControllerChannel(channel)) {
+    if (!sPluginEnabled) {
+        return result;
+    }
+    bool isSynthetic = (IsSeparateMode() && IsSyntheticControllerChannel(channel)) ||
+                        (IsSplitWiimoteMode() && IsSyntheticWiimoteChannel(channel));
+    if (!isSynthetic) {
         return result;
     }
 
@@ -777,15 +1041,21 @@ DECL_FUNCTION(uint32_t, KPADReadEx, KPADChan chan, KPADStatus *data, uint32_t si
     sKPADReadCalls++;
     uint32_t readCount = real_KPADReadEx(chan, data, size, error);
 
-    if (!sPluginEnabled || !IsSeparateMode() || !IsSyntheticControllerChannel((WPADChan) chan) || data == nullptr || size == 0) {
-        return readCount;
-    }
-    if (readCount > 0) {
+    if (!sPluginEnabled || data == nullptr || size == 0 || readCount > 0) {
         return readCount;
     }
 
     KPADStatus synthetic = {};
-    if (!BuildSyntheticKpadFromDrc1(&synthetic)) {
+    bool built = false;
+    if (IsSeparateMode() && IsSyntheticControllerChannel((WPADChan) chan)) {
+        built = BuildSyntheticKpadFromDrc1(&synthetic);
+    } else if (IsSplitWiimoteMode() && IsSyntheticWiimoteChannel((WPADChan) chan)) {
+        built = BuildSyntheticWiimoteFromDrc1Motion(&synthetic);
+    } else {
+        return readCount;
+    }
+
+    if (!built) {
         sKPADInjectFailures++;
         return readCount;
     }
@@ -817,15 +1087,21 @@ DECL_FUNCTION(uint32_t, KPADRead, KPADChan chan, KPADStatus *data, uint32_t size
     sKPADReadCalls++;
     uint32_t readCount = real_KPADRead(chan, data, size);
 
-    if (!sPluginEnabled || !IsSeparateMode() || !IsSyntheticControllerChannel((WPADChan) chan) || data == nullptr || size == 0) {
-        return readCount;
-    }
-    if (readCount > 0) {
+    if (!sPluginEnabled || data == nullptr || size == 0 || readCount > 0) {
         return readCount;
     }
 
     KPADStatus synthetic = {};
-    if (!BuildSyntheticKpadFromDrc1(&synthetic)) {
+    bool built = false;
+    if (IsSeparateMode() && IsSyntheticControllerChannel((WPADChan) chan)) {
+        built = BuildSyntheticKpadFromDrc1(&synthetic);
+    } else if (IsSplitWiimoteMode() && IsSyntheticWiimoteChannel((WPADChan) chan)) {
+        built = BuildSyntheticWiimoteFromDrc1Motion(&synthetic);
+    } else {
+        return readCount;
+    }
+
+    if (!built) {
         sKPADInjectFailures++;
         return readCount;
     }
@@ -860,29 +1136,26 @@ int32_t PairNow_getCurrentValueSelectedDisplay(void *, char *out_buf, int32_t ou
     return 0;
 }
 
-int32_t ReloadMenu_getCurrentValueDisplay(void *, char *out_buf, int32_t out_size) {
-    snprintf(out_buf, out_size, "  Press A");
-    return 0;
-}
-
-int32_t ReloadMenu_getCurrentValueSelectedDisplay(void *, char *out_buf, int32_t out_size) {
-    snprintf(out_buf, out_size, "< Press A >");
-    return 0;
-}
-
 void PairNow_onInput(void *, WUPSConfigSimplePadData input) {
     if ((input.buttons_d & WUPS_CONFIG_BUTTON_A) == WUPS_CONFIG_BUTTON_A) {
+        if (sPairing.getState() == DrcPairing::STATE_PAIRING) {
+            // Pressing A again while a pairing attempt is already running
+            // cancels it, rather than silently doing nothing (startPairing
+            // already refuses to start a second attempt on top of a
+            // running one). This is a real, working cancel path from the
+            // GamePad itself. I looked for a way to hook the console's
+            // physical SYNC button specifically -- checked wut's nn_ccr
+            // export list and the WUPS button_combo API you shared -- and
+            // found no exposed way to read it; it appears to be handled
+            // entirely inside IOSU as part of the pairing handshake
+            // itself, below anything homebrew can observe directly.
+            sPairing.stopPairing();
+            return;
+        }
         // Allow pairing regardless of plugin enabled state — the user needs to
         // pair before using the plugin, so don't block on sPluginEnabled.
         ApplyDualDrcMode(true);
         sPairing.startPairing(120);
-    }
-}
-
-void ReloadMenu_onInput(void *, WUPSConfigSimplePadData input) {
-    if ((input.buttons_d & WUPS_CONFIG_BUTTON_A) == WUPS_CONFIG_BUTTON_A) {
-        // Defer until ConfigMenuClosedCallback so changed config items are committed first.
-        sReloadMenuRequested = true;
     }
 }
 
@@ -1073,6 +1346,17 @@ WUPSConfigAPICallbackStatus ConfigMenuOpenedCallback(WUPSConfigCategoryHandle ro
         return WUPSCONFIG_API_CALLBACK_RESULT_ERROR;
     }
 
+    if (WUPSConfigItemMultipleValues_AddToCategory(root,
+                                                    "dual_drc_motion_mode",
+                                                    "Motion Controls",
+                                                    static_cast<int>(kDefaultMotionMode),
+                                                    static_cast<int>(sMotionMode),
+                                                    sMotionModeValues,
+                                                    sizeof(sMotionModeValues) / sizeof(sMotionModeValues[0]),
+                                                    &MotionModeChanged) != WUPSCONFIG_API_RESULT_SUCCESS) {
+        return WUPSCONFIG_API_CALLBACK_RESULT_ERROR;
+    }
+
     if (WUPSConfigItemBoolean_AddToCategoryEx(root,
                                                "dual_drc_performance_mode",
                                                "Performance Mode (disable DRC1 video)",
@@ -1118,46 +1402,11 @@ WUPSConfigAPICallbackStatus ConfigMenuOpenedCallback(WUPSConfigCategoryHandle ro
         }
     }
 
-    {
-        WUPSConfigItemHandle itemHandle;
-        WUPSConfigAPIItemCallbacksV2 callbacks = {
-            .getCurrentValueDisplay         = &ReloadMenu_getCurrentValueDisplay,
-            .getCurrentValueSelectedDisplay = &ReloadMenu_getCurrentValueSelectedDisplay,
-                .onSelected                     = nullptr,
-                .restoreDefault                 = nullptr,
-                .isMovementAllowed              = nullptr,
-                .onCloseCallback                = nullptr,
-            .onInput                        = &ReloadMenu_onInput,
-                .onInputEx                      = nullptr,
-                .onDelete                       = nullptr,
-        };
-        WUPSConfigAPIItemOptionsV2 options = {
-            .displayName = "Reload Wii U (use after enabling plugin)",
-                .context     = nullptr,
-                .callbacks   = callbacks,
-        };
-        if (WUPSConfigAPI_Item_Create(options, &itemHandle) != WUPSCONFIG_API_RESULT_SUCCESS) {
-            return WUPSCONFIG_API_CALLBACK_RESULT_ERROR;
-        }
-        if (WUPSConfigAPI_Category_AddItem(root, itemHandle) != WUPSCONFIG_API_RESULT_SUCCESS) {
-            WUPSConfigAPI_Item_Destroy(itemHandle);
-            return WUPSCONFIG_API_CALLBACK_RESULT_ERROR;
-        }
-    }
-
     return WUPSCONFIG_API_CALLBACK_RESULT_SUCCESS;
 }
 
 void ConfigMenuClosedCallback() {
-    if (!sReloadMenuRequested) {
-        return;
-    }
-
-    sReloadMenuRequested = false;
-    // Preserve final enabled state for the immediate relaunch only.
-    WUPSStorageAPI_StoreBool(nullptr, kStorageKeyEnableOnce, sPluginEnabled);
     SaveSettingsToStorage();
-    SYSLaunchMenu();
 }
 } // namespace
 
