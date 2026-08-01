@@ -13,6 +13,14 @@ Back in E3 2012, Nintendo announced that two Wii U gamepads can be connected to 
 
 • Switch video source between Gamepad and TV.
 
+• Change the framerate of the gamepads
+
+• Smooth video
+
+• Motion controls
+
+• Touchscreen support
+
 # Controls
 • Press left stick and right stick together to change the controller mode between Seperate and Mirrored.
 
