@@ -4,7 +4,6 @@ This Wii U plugin allows to connect 2 Wii U gamepads at the same time! It can st
 
 Back in E3 2012, Nintendo announced that two Wii U gamepads can be connected to the console at the same time. This feature was never released, but it is still in the system files and can be used in homebrew applications. This plugin allows you to play some games with two gamepads!
 
-THIS APP IS IN BETA, expect lots of bugs.
 # Features
 • Pair the Wii U gamepads
 
@@ -34,12 +33,10 @@ second gamepad in the Quick Start menu which somehow controls the Wii U.
 
 If using Vanilla by MattKC on the second gamepad, make sure to pair it as the primary gamepad (by using the inbuilt pairing menu). You can do this by pressing the SYNC buttom twice.
 
-DRC1 Video Rate selection in the config menu allows you to set the FPS of the video received by the second gamepad.
+Gamepad Video rate selection in the config menu allows you to set the FPS of the video received by the second and first gamepad. This can add more performance and speed up games at the cost of a laggier display on the Wii U gamepad. Overclocking is necessary for games to run at full speed and have good framerate on the gamepads.
 
 # Known Issues
-• Blocks the Aroma Plugin Menu opening on the home menu but not in games.
-
-• Slows down the console a lot
+• Blocks the Aroma Plugin Menu opening on the home menu but not in games due to memory use.
 # Photos:
 
 <img width="3736" height="2802" alt="WIN_20260727_10_51_25_Pro" src="https://github.com/user-attachments/assets/83bde566-835c-4389-a65b-91cf33852569" />
