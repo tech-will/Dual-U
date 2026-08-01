@@ -19,7 +19,7 @@
 
 WUPS_PLUGIN_NAME("Dual U");
 WUPS_PLUGIN_DESCRIPTION("Pair and use a second Wii U gamepad");
-WUPS_PLUGIN_VERSION("v0.8");
+WUPS_PLUGIN_VERSION("v0.9");
 WUPS_PLUGIN_AUTHOR("tech-will");
 WUPS_PLUGIN_LICENSE("MIT");
 
@@ -43,15 +43,28 @@ enum MotionMode : uint32_t {
     MOTION_MODE_SPLIT_WIIMOTE = 2,
 };
 
+// The DRC1 video copy is a full GPU resolve/blit of an entire frame, done
+// in addition to the game's own normal TV+DRC0 copies, on hardware that
+// wasn't fast to begin with. Skipping it on a fraction of frames trades
+// DRC1 smoothness for real GPU time back -- DRC1 just keeps showing its
+// last copied frame in between, rather than freezing outright.
+enum Drc1VideoRate : uint32_t {
+    DRC1_VIDEO_RATE_FULL = 0,
+    DRC1_VIDEO_RATE_HALF = 1,
+    DRC1_VIDEO_RATE_THIRD = 2,
+};
+
 constexpr bool kDefaultPluginEnabled = false;
 constexpr uint32_t kDefaultControllerMode = CONTROLLER_MODE_SEPARATE_PRO;
 constexpr uint32_t kDefaultVideoFeedMode = VIDEO_FEED_GAMEPAD;
 constexpr uint32_t kDefaultMotionMode = MOTION_MODE_MIRRORED;
+constexpr uint32_t kDefaultDrc1VideoRate = DRC1_VIDEO_RATE_FULL;
 constexpr bool kDefaultPerformanceModeEnabled = false;
 constexpr const char *kStorageKeyEnabled = "dual_drc_enabled";
 constexpr const char *kStorageKeyControllerMode = "dual_drc_controller_mode";
 constexpr const char *kStorageKeyVideoFeedMode = "dual_drc_video_feed_mode";
 constexpr const char *kStorageKeyMotionMode = "dual_drc_motion_mode";
+constexpr const char *kStorageKeyDrc1VideoRate = "dual_drc_drc1_video_rate";
 constexpr const char *kStorageKeyPerformanceMode = "dual_drc_performance_mode";
 constexpr uint32_t kControllerModeToggleCombo = VPAD_BUTTON_STICK_L | VPAD_BUTTON_STICK_R;
 constexpr uint32_t kVideoFeedToggleCombo = VPAD_BUTTON_RIGHT | VPAD_BUTTON_Y;
@@ -71,6 +84,7 @@ bool sPerformanceModeEnabled = kDefaultPerformanceModeEnabled;
 uint32_t sControllerMode = kDefaultControllerMode;
 uint32_t sVideoFeedMode = kDefaultVideoFeedMode;
 uint32_t sMotionMode = kDefaultMotionMode;
+uint32_t sDrc1VideoRate = kDefaultDrc1VideoRate;
 
 ConfigItemMultipleValuesPair sControllerModeValues[] = {
         {CONTROLLER_MODE_MIRRORED, "Mirrored"},
@@ -86,6 +100,12 @@ ConfigItemMultipleValuesPair sMotionModeValues[] = {
         {MOTION_MODE_OFF, "Off"},
     {MOTION_MODE_MIRRORED, "Mirrored"},
     {MOTION_MODE_SPLIT_WIIMOTE, "Split Wii Remote"},
+};
+
+ConfigItemMultipleValuesPair sDrc1VideoRateValues[] = {
+        {DRC1_VIDEO_RATE_FULL, "Full (every frame)"},
+    {DRC1_VIDEO_RATE_HALF, "Half (every 2nd frame)"},
+    {DRC1_VIDEO_RATE_THIRD, "Third (every 3rd frame)"},
 };
 
 DrcPairing sPairing;
@@ -117,6 +137,7 @@ uint32_t sGX2CopyToScanBufferCalls = 0;
 uint32_t sGX2CopyToDrc1Calls = 0;
 GX2ColorBuffer sCachedTvColorBuffer = {};
 bool sHasCachedTvColorBuffer = false;
+uint32_t sDrc1VideoFrameCounter = 0;
 uint32_t sVPADHookCalls = 0;
 uint32_t sVPADMergedCalls = 0;
 uint32_t sVPADDrc1ReadAttempts = 0;
@@ -160,6 +181,7 @@ void SaveSettingsToStorage() {
     WUPSStorageAPI_StoreU32(nullptr, kStorageKeyControllerMode, sControllerMode);
     WUPSStorageAPI_StoreU32(nullptr, kStorageKeyVideoFeedMode, sVideoFeedMode);
     WUPSStorageAPI_StoreU32(nullptr, kStorageKeyMotionMode, sMotionMode);
+    WUPSStorageAPI_StoreU32(nullptr, kStorageKeyDrc1VideoRate, sDrc1VideoRate);
     WUPSStorageAPI_StoreBool(nullptr, kStorageKeyPerformanceMode, sPerformanceModeEnabled);
     WUPSStorageAPI_SaveStorage(false);
 }
@@ -190,6 +212,13 @@ void LoadSettingsFromStorage() {
     if (WUPSStorageAPI_GetU32(nullptr, kStorageKeyMotionMode, &motionMode) == WUPS_STORAGE_ERROR_SUCCESS) {
         if (motionMode <= MOTION_MODE_SPLIT_WIIMOTE) {
             sMotionMode = motionMode;
+        }
+    }
+
+    uint32_t drc1VideoRate = kDefaultDrc1VideoRate;
+    if (WUPSStorageAPI_GetU32(nullptr, kStorageKeyDrc1VideoRate, &drc1VideoRate) == WUPS_STORAGE_ERROR_SUCCESS) {
+        if (drc1VideoRate <= DRC1_VIDEO_RATE_THIRD) {
+            sDrc1VideoRate = drc1VideoRate;
         }
     }
 
@@ -364,6 +393,11 @@ void VideoFeedModeChanged(ConfigItemMultipleValues *, uint32_t newValue) {
 
 void MotionModeChanged(ConfigItemMultipleValues *, uint32_t newValue) {
     sMotionMode = newValue;
+    SaveSettingsToStorage();
+}
+
+void Drc1VideoRateChanged(ConfigItemMultipleValues *, uint32_t newValue) {
+    sDrc1VideoRate = newValue;
     SaveSettingsToStorage();
 }
 
@@ -667,6 +701,25 @@ DECL_FUNCTION(void, GX2CopyColorBufferToScanBuffer, const GX2ColorBuffer *colorB
     // most recently captured TV frame, depending on "Video Feed".
     if (colorBuffer != nullptr && (scanTarget == GX2_SCAN_TARGET_DRC || scanTarget == GX2_SCAN_TARGET_DRC0)) {
         sGX2CopyToDrc1Calls++;
+
+        // This copy is a full GPU resolve/blit of an entire frame, on top
+        // of everything the game already does for TV+DRC0 -- the single
+        // biggest cost this plugin adds, on hardware that wasn't fast to
+        // begin with. "DRC1 Video Rate" trades some of that GPU time back
+        // by skipping this specific copy on a fraction of frames; DRC1
+        // just keeps showing its last copied frame in between rather than
+        // freezing, the same way it would if the game itself were only
+        // updating at a lower rate.
+        sDrc1VideoFrameCounter++;
+        uint32_t drc1VideoDivisor = 1;
+        if (sDrc1VideoRate == DRC1_VIDEO_RATE_HALF) {
+            drc1VideoDivisor = 2;
+        } else if (sDrc1VideoRate == DRC1_VIDEO_RATE_THIRD) {
+            drc1VideoDivisor = 3;
+        }
+        if ((sDrc1VideoFrameCounter % drc1VideoDivisor) != 0) {
+            return;
+        }
 
         const GX2ColorBuffer *drc1Source = colorBuffer;
         if (sVideoFeedMode == VIDEO_FEED_TV && sHasCachedTvColorBuffer) {
@@ -1369,6 +1422,17 @@ WUPSConfigAPICallbackStatus ConfigMenuOpenedCallback(WUPSConfigCategoryHandle ro
                                                     sMotionModeValues,
                                                     sizeof(sMotionModeValues) / sizeof(sMotionModeValues[0]),
                                                     &MotionModeChanged) != WUPSCONFIG_API_RESULT_SUCCESS) {
+        return WUPSCONFIG_API_CALLBACK_RESULT_ERROR;
+    }
+
+    if (WUPSConfigItemMultipleValues_AddToCategory(root,
+                                                    "dual_drc_drc1_video_rate",
+                                                    "DRC1 Video Rate",
+                                                    static_cast<int>(kDefaultDrc1VideoRate),
+                                                    static_cast<int>(sDrc1VideoRate),
+                                                    sDrc1VideoRateValues,
+                                                    sizeof(sDrc1VideoRateValues) / sizeof(sDrc1VideoRateValues[0]),
+                                                    &Drc1VideoRateChanged) != WUPSCONFIG_API_RESULT_SUCCESS) {
         return WUPSCONFIG_API_CALLBACK_RESULT_ERROR;
     }
 
