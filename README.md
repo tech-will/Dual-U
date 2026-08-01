@@ -32,6 +32,10 @@ To turn the plugin on, go into the Dual U plugin in the Aroma Plugin Menu and se
 The "Performance Mode" toggle causes the second gamepad to disconnect under normal use. To fix this, keep the 
 second gamepad in the Quick Start menu which somehow controls the Wii U.
 
+If using Vanilla by MattKC on the second gamepad, make sure to pair it as the primary gamepad (by using the inbuilt pairing menu). You can do this by pressing the SYNC buttom twice.
+
+DRC1 Video Rate selection in the config menu allows you to set the FPS of the video received by the second gamepad.
+
 # Known Issues
 • Blocks the Aroma Plugin Menu opening on the home menu but not in games.
 
