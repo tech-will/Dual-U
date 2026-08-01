@@ -19,7 +19,7 @@
 
 WUPS_PLUGIN_NAME("Dual U");
 WUPS_PLUGIN_DESCRIPTION("Pair and use a second Wii U gamepad");
-WUPS_PLUGIN_VERSION("v0.9");
+WUPS_PLUGIN_VERSION("v1.0");
 WUPS_PLUGIN_AUTHOR("tech-will");
 WUPS_PLUGIN_LICENSE("MIT");
 
@@ -43,11 +43,22 @@ enum MotionMode : uint32_t {
     MOTION_MODE_SPLIT_WIIMOTE = 2,
 };
 
+enum TouchMode : uint32_t {
+    TOUCH_MODE_OFF = 0,
+    TOUCH_MODE_MIRRORED = 1,
+};
+
 // The DRC1 video copy is a full GPU resolve/blit of an entire frame, done
 // in addition to the game's own normal TV+DRC0 copies, on hardware that
 // wasn't fast to begin with. Skipping it on a fraction of frames trades
-// DRC1 smoothness for real GPU time back -- DRC1 just keeps showing its
-// last copied frame in between, rather than freezing outright.
+// smoothness for real GPU time back -- the skipped pad just keeps showing
+// its last copied frame in between, rather than freezing outright. This
+// type is shared by both the first-GamePad (DRC0) and second-GamePad
+// (DRC1) rate settings, despite the Drc1-flavored member names below --
+// renaming those would mean touching every existing DRC1-specific
+// variable/storage-key/callback name too, since they all share the same
+// substring, so it's left as one shared enum instead of two near-identical
+// ones.
 enum Drc1VideoRate : uint32_t {
     DRC1_VIDEO_RATE_FULL = 0,
     DRC1_VIDEO_RATE_HALF = 1,
@@ -58,24 +69,24 @@ constexpr bool kDefaultPluginEnabled = false;
 constexpr uint32_t kDefaultControllerMode = CONTROLLER_MODE_SEPARATE_PRO;
 constexpr uint32_t kDefaultVideoFeedMode = VIDEO_FEED_GAMEPAD;
 constexpr uint32_t kDefaultMotionMode = MOTION_MODE_MIRRORED;
+constexpr uint32_t kDefaultTouchMode = TOUCH_MODE_MIRRORED;
+constexpr uint32_t kDefaultDrc0VideoRate = DRC1_VIDEO_RATE_FULL;
 constexpr uint32_t kDefaultDrc1VideoRate = DRC1_VIDEO_RATE_FULL;
 constexpr bool kDefaultPerformanceModeEnabled = false;
+// Player 1 (WPAD_CHAN_0), matching the plugin's original fixed behavior.
+constexpr uint32_t kDefaultControllerMappingChannel = WPAD_CHAN_0;
 constexpr const char *kStorageKeyEnabled = "dual_drc_enabled";
 constexpr const char *kStorageKeyControllerMode = "dual_drc_controller_mode";
 constexpr const char *kStorageKeyVideoFeedMode = "dual_drc_video_feed_mode";
 constexpr const char *kStorageKeyMotionMode = "dual_drc_motion_mode";
+constexpr const char *kStorageKeyTouchMode = "dual_drc_touch_mode";
+constexpr const char *kStorageKeyDrc0VideoRate = "dual_drc_drc0_video_rate";
 constexpr const char *kStorageKeyDrc1VideoRate = "dual_drc_drc1_video_rate";
 constexpr const char *kStorageKeyPerformanceMode = "dual_drc_performance_mode";
+constexpr const char *kStorageKeyControllerMappingChannel = "dual_drc_controller_mapping_channel";
 constexpr uint32_t kControllerModeToggleCombo = VPAD_BUTTON_STICK_L | VPAD_BUTTON_STICK_R;
 constexpr uint32_t kVideoFeedToggleCombo = VPAD_BUTTON_RIGHT | VPAD_BUTTON_Y;
-constexpr WPADChan kSyntheticControllerChannel = WPAD_CHAN_0;
-// A bare (no MotionPlus) Wii Remote for "Split Wii Remote" motion mode.
-// Deliberately a different channel than the synthetic Pro Controller so
-// the two can coexist if Controller Mode and Motion Mode are both active
-// at once. Note: this does mean a *real* Wii Remote actually paired on
-// channel 1 would collide with it, same tradeoff the existing synthetic
-// Pro Controller already accepts on channel 0.
-constexpr WPADChan kSyntheticWiimoteChannel = WPAD_CHAN_1;
+
 
 bool sPluginEnabled = kDefaultPluginEnabled;
 bool sExperimentalPatchEnabled = true;
@@ -84,7 +95,13 @@ bool sPerformanceModeEnabled = kDefaultPerformanceModeEnabled;
 uint32_t sControllerMode = kDefaultControllerMode;
 uint32_t sVideoFeedMode = kDefaultVideoFeedMode;
 uint32_t sMotionMode = kDefaultMotionMode;
+uint32_t sTouchMode = kDefaultTouchMode;
+uint32_t sDrc0VideoRate = kDefaultDrc0VideoRate;
 uint32_t sDrc1VideoRate = kDefaultDrc1VideoRate;
+// Which WPAD channel (Player 1-4) the synthetic Pro Controller occupies.
+// Configurable via "Controller Mapping" so it can be moved off whatever
+// slots real controllers are already using.
+uint32_t sSyntheticControllerChannel = kDefaultControllerMappingChannel;
 
 ConfigItemMultipleValuesPair sControllerModeValues[] = {
         {CONTROLLER_MODE_MIRRORED, "Mirrored"},
@@ -102,10 +119,22 @@ ConfigItemMultipleValuesPair sMotionModeValues[] = {
     {MOTION_MODE_SPLIT_WIIMOTE, "Split Wii Remote"},
 };
 
+ConfigItemMultipleValuesPair sTouchModeValues[] = {
+        {TOUCH_MODE_OFF, "Off"},
+    {TOUCH_MODE_MIRRORED, "Mirrored"},
+};
+
 ConfigItemMultipleValuesPair sDrc1VideoRateValues[] = {
         {DRC1_VIDEO_RATE_FULL, "Full (every frame)"},
     {DRC1_VIDEO_RATE_HALF, "Half (every 2nd frame)"},
     {DRC1_VIDEO_RATE_THIRD, "Third (every 3rd frame)"},
+};
+
+ConfigItemMultipleValuesPair sControllerMappingValues[] = {
+        {WPAD_CHAN_0, "Player 1"},
+    {WPAD_CHAN_1, "Player 2"},
+    {WPAD_CHAN_2, "Player 3"},
+    {WPAD_CHAN_3, "Player 4"},
 };
 
 DrcPairing sPairing;
@@ -137,6 +166,7 @@ uint32_t sGX2CopyToScanBufferCalls = 0;
 uint32_t sGX2CopyToDrc1Calls = 0;
 GX2ColorBuffer sCachedTvColorBuffer = {};
 bool sHasCachedTvColorBuffer = false;
+uint32_t sDrc0VideoFrameCounter = 0;
 uint32_t sDrc1VideoFrameCounter = 0;
 uint32_t sVPADHookCalls = 0;
 uint32_t sVPADMergedCalls = 0;
@@ -181,8 +211,11 @@ void SaveSettingsToStorage() {
     WUPSStorageAPI_StoreU32(nullptr, kStorageKeyControllerMode, sControllerMode);
     WUPSStorageAPI_StoreU32(nullptr, kStorageKeyVideoFeedMode, sVideoFeedMode);
     WUPSStorageAPI_StoreU32(nullptr, kStorageKeyMotionMode, sMotionMode);
+    WUPSStorageAPI_StoreU32(nullptr, kStorageKeyTouchMode, sTouchMode);
+    WUPSStorageAPI_StoreU32(nullptr, kStorageKeyDrc0VideoRate, sDrc0VideoRate);
     WUPSStorageAPI_StoreU32(nullptr, kStorageKeyDrc1VideoRate, sDrc1VideoRate);
     WUPSStorageAPI_StoreBool(nullptr, kStorageKeyPerformanceMode, sPerformanceModeEnabled);
+    WUPSStorageAPI_StoreU32(nullptr, kStorageKeyControllerMappingChannel, sSyntheticControllerChannel);
     WUPSStorageAPI_SaveStorage(false);
 }
 
@@ -215,6 +248,20 @@ void LoadSettingsFromStorage() {
         }
     }
 
+    uint32_t touchMode = kDefaultTouchMode;
+    if (WUPSStorageAPI_GetU32(nullptr, kStorageKeyTouchMode, &touchMode) == WUPS_STORAGE_ERROR_SUCCESS) {
+        if (touchMode <= TOUCH_MODE_MIRRORED) {
+            sTouchMode = touchMode;
+        }
+    }
+
+    uint32_t drc0VideoRate = kDefaultDrc0VideoRate;
+    if (WUPSStorageAPI_GetU32(nullptr, kStorageKeyDrc0VideoRate, &drc0VideoRate) == WUPS_STORAGE_ERROR_SUCCESS) {
+        if (drc0VideoRate <= DRC1_VIDEO_RATE_THIRD) {
+            sDrc0VideoRate = drc0VideoRate;
+        }
+    }
+
     uint32_t drc1VideoRate = kDefaultDrc1VideoRate;
     if (WUPSStorageAPI_GetU32(nullptr, kStorageKeyDrc1VideoRate, &drc1VideoRate) == WUPS_STORAGE_ERROR_SUCCESS) {
         if (drc1VideoRate <= DRC1_VIDEO_RATE_THIRD) {
@@ -225,6 +272,13 @@ void LoadSettingsFromStorage() {
     bool performanceMode = kDefaultPerformanceModeEnabled;
     if (WUPSStorageAPI_GetBool(nullptr, kStorageKeyPerformanceMode, &performanceMode) == WUPS_STORAGE_ERROR_SUCCESS) {
         sPerformanceModeEnabled = performanceMode;
+    }
+
+    uint32_t controllerMappingChannel = kDefaultControllerMappingChannel;
+    if (WUPSStorageAPI_GetU32(nullptr, kStorageKeyControllerMappingChannel, &controllerMappingChannel) == WUPS_STORAGE_ERROR_SUCCESS) {
+        if (controllerMappingChannel <= WPAD_CHAN_3) {
+            sSyntheticControllerChannel = controllerMappingChannel;
+        }
     }
 }
 
@@ -295,15 +349,26 @@ bool IsSeparateMode() {
 }
 
 bool IsSyntheticControllerChannel(WPADChan chan) {
-    return chan == kSyntheticControllerChannel;
+    return chan == static_cast<WPADChan>(sSyntheticControllerChannel);
 }
 
 bool IsSplitWiimoteMode() {
     return sMotionMode == MOTION_MODE_SPLIT_WIIMOTE;
 }
 
+// The synthetic Wii Remote (Split Wii Remote motion mode) always needs a
+// channel distinct from whatever "Controller Mapping" has the synthetic
+// Pro Controller on, or the two would collide the moment both features
+// are active at once. Rather than hardcoding a fixed channel that could
+// land on the same slot the user picked for Controller Mapping, pick
+// whichever of channel 0/1 ISN'T that slot -- guaranteed never to
+// collide, regardless of which Player the Pro Controller is mapped to.
+WPADChan GetSyntheticWiimoteChannel() {
+    return (static_cast<WPADChan>(sSyntheticControllerChannel) == WPAD_CHAN_0) ? WPAD_CHAN_1 : WPAD_CHAN_0;
+}
+
 bool IsSyntheticWiimoteChannel(WPADChan chan) {
-    return chan == kSyntheticWiimoteChannel;
+    return chan == GetSyntheticWiimoteChannel();
 }
 
 // Shared by every consumer of DRC1's raw VPAD data (button/stick/motion
@@ -396,8 +461,23 @@ void MotionModeChanged(ConfigItemMultipleValues *, uint32_t newValue) {
     SaveSettingsToStorage();
 }
 
+void TouchModeChanged(ConfigItemMultipleValues *, uint32_t newValue) {
+    sTouchMode = newValue;
+    SaveSettingsToStorage();
+}
+
+void Drc0VideoRateChanged(ConfigItemMultipleValues *, uint32_t newValue) {
+    sDrc0VideoRate = newValue;
+    SaveSettingsToStorage();
+}
+
 void Drc1VideoRateChanged(ConfigItemMultipleValues *, uint32_t newValue) {
     sDrc1VideoRate = newValue;
+    SaveSettingsToStorage();
+}
+
+void ControllerMappingChanged(ConfigItemMultipleValues *, uint32_t newValue) {
+    sSyntheticControllerChannel = newValue;
     SaveSettingsToStorage();
 }
 
@@ -666,7 +746,24 @@ WUPS_MUST_REPLACE_FOR_PROCESS(GX2SetDRCBuffer,
 
 DECL_FUNCTION(void, GX2CopyColorBufferToScanBuffer, const GX2ColorBuffer *colorBuffer, GX2ScanTarget scanTarget) {
     sGX2CopyToScanBufferCalls++;
-    real_GX2CopyColorBufferToScanBuffer(colorBuffer, scanTarget);
+
+    // "First GamePad Video Rate" throttles DRC0's own copy the same way
+    // "Second GamePad Video Rate" throttles DRC1's below -- skipping this
+    // specific copy doesn't skip the game's own rendering (that already
+    // happened before this hook fires), only the scan-out of this
+    // particular frame to DRC0, so DRC0 just keeps showing its last frame
+    // on skipped calls rather than losing any rendering work. Never
+    // applies to the TV target -- TV output is never touched here.
+    bool isDrc0Target = (scanTarget == GX2_SCAN_TARGET_DRC || scanTarget == GX2_SCAN_TARGET_DRC0);
+    bool skipDrc0CopyThisCall = false;
+    if (isDrc0Target && sPluginEnabled && sExperimentalPatchEnabled && sDrc0VideoRate != DRC1_VIDEO_RATE_FULL) {
+        sDrc0VideoFrameCounter++;
+        uint32_t drc0VideoDivisor = (sDrc0VideoRate == DRC1_VIDEO_RATE_HALF) ? 2 : 3;
+        skipDrc0CopyThisCall = (sDrc0VideoFrameCounter % drc0VideoDivisor) != 0;
+    }
+    if (!skipDrc0CopyThisCall) {
+        real_GX2CopyColorBufferToScanBuffer(colorBuffer, scanTarget);
+    }
 
     // Keep a copy of the most recent TV frame around so it can be reused
     // as the DRC1 source when "Video Feed" is set to TV Video. This runs
@@ -770,10 +867,21 @@ DECL_FUNCTION(int32_t, VPADRead, VPADChan chan, VPADStatus *buffers, uint32_t co
         CheckVideoFeedToggleCombo(buffers, readCount, sVideoFeedToggleComboLatched);
     }
 
-    if (!sPluginEnabled || !sExperimentalPatchEnabled || !IsMirroredMode()) {
+    if (!sPluginEnabled || !sExperimentalPatchEnabled) {
         return readCount;
     }
     if (chan != VPAD_CHAN_0 || buffers == nullptr || count == 0 || readCount <= 0) {
+        return readCount;
+    }
+
+    // Buttons/sticks/motion only apply in Mirrored controller mode -- DRC1
+    // becomes the same input identity as DRC0 there, which is what makes
+    // merging those make sense. Touch is its own independent setting
+    // though (per-request: it should keep working even in Separate
+    // controller mode), so fetch DRC1 if either one actually needs it.
+    bool needsControlsMerge = IsMirroredMode();
+    bool needsTouchMerge = (sTouchMode == TOUCH_MODE_MIRRORED);
+    if (!needsControlsMerge && !needsTouchMerge) {
         return readCount;
     }
 
@@ -784,41 +892,43 @@ DECL_FUNCTION(int32_t, VPADRead, VPADChan chan, VPADStatus *buffers, uint32_t co
 
     uint32_t samplesToMerge = std::min<uint32_t>(count, static_cast<uint32_t>(readCount));
     for (uint32_t i = 0; i < samplesToMerge; i++) {
-        buffers[i].hold |= drc1.hold;
-        buffers[i].trigger |= drc1.trigger;
-        buffers[i].release |= drc1.release;
+        if (needsControlsMerge) {
+            buffers[i].hold |= drc1.hold;
+            buffers[i].trigger |= drc1.trigger;
+            buffers[i].release |= drc1.release;
 
-        if (std::abs(drc1.leftStick.x) > std::abs(buffers[i].leftStick.x)) {
-            buffers[i].leftStick.x = drc1.leftStick.x;
-        }
-        if (std::abs(drc1.leftStick.y) > std::abs(buffers[i].leftStick.y)) {
-            buffers[i].leftStick.y = drc1.leftStick.y;
-        }
-        if (std::abs(drc1.rightStick.x) > std::abs(buffers[i].rightStick.x)) {
-            buffers[i].rightStick.x = drc1.rightStick.x;
-        }
-        if (std::abs(drc1.rightStick.y) > std::abs(buffers[i].rightStick.y)) {
-            buffers[i].rightStick.y = drc1.rightStick.y;
-        }
+            if (std::abs(drc1.leftStick.x) > std::abs(buffers[i].leftStick.x)) {
+                buffers[i].leftStick.x = drc1.leftStick.x;
+            }
+            if (std::abs(drc1.leftStick.y) > std::abs(buffers[i].leftStick.y)) {
+                buffers[i].leftStick.y = drc1.leftStick.y;
+            }
+            if (std::abs(drc1.rightStick.x) > std::abs(buffers[i].rightStick.x)) {
+                buffers[i].rightStick.x = drc1.rightStick.x;
+            }
+            if (std::abs(drc1.rightStick.y) > std::abs(buffers[i].rightStick.y)) {
+                buffers[i].rightStick.y = drc1.rightStick.y;
+            }
 
-        // Motion (accelerometer/gyro/angle/direction/magnetometer) is a
-        // coherent bundle describing how a single physical pad is
-        // oriented and moving, so it doesn't make sense to blend it
-        // field-by-field the way sticks are above. Instead, pick
-        // whichever pad is actively being moved right now and forward
-        // its whole motion state. `accelorometer.variation` is the
-        // length of the change in acceleration since the last sample,
-        // making it a much better "is this pad moving" signal than raw
-        // magnitude (which sits around 1g at rest from gravity alone).
-        // Only when Motion Mode is Mirrored -- Off skips this entirely,
-        // and Split Wii Remote forwards DRC1's motion on its own separate
-        // synthetic channel instead of blending it in here.
-        if (sMotionMode == MOTION_MODE_MIRRORED && drc1.accelorometer.variation > buffers[i].accelorometer.variation) {
-            buffers[i].accelorometer = drc1.accelorometer;
-            buffers[i].gyro = drc1.gyro;
-            buffers[i].angle = drc1.angle;
-            buffers[i].direction = drc1.direction;
-            buffers[i].mag = drc1.mag;
+            // Motion (accelerometer/gyro/angle/direction/magnetometer) is a
+            // coherent bundle describing how a single physical pad is
+            // oriented and moving, so it doesn't make sense to blend it
+            // field-by-field the way sticks are above. Instead, pick
+            // whichever pad is actively being moved right now and forward
+            // its whole motion state. `accelorometer.variation` is the
+            // length of the change in acceleration since the last sample,
+            // making it a much better "is this pad moving" signal than raw
+            // magnitude (which sits around 1g at rest from gravity alone).
+            // Only when Motion Mode is Mirrored -- Off skips this entirely,
+            // and Split Wii Remote forwards DRC1's motion on its own separate
+            // synthetic channel instead of blending it in here.
+            if (sMotionMode == MOTION_MODE_MIRRORED && drc1.accelorometer.variation > buffers[i].accelorometer.variation) {
+                buffers[i].accelorometer = drc1.accelorometer;
+                buffers[i].gyro = drc1.gyro;
+                buffers[i].angle = drc1.angle;
+                buffers[i].direction = drc1.direction;
+                buffers[i].mag = drc1.mag;
+            }
         }
 
         // Touch: wherever you press on the second GamePad presses on the
@@ -829,8 +939,9 @@ DECL_FUNCTION(int32_t, VPADRead, VPADChan chan, VPADStatus *buffers, uint32_t co
         // whichever field a game reads stays internally consistent)
         // rather than just tpNormal alone. When DRC1 isn't touched, DRC0's
         // own touchscreen is left completely alone and keeps working
-        // normally on its own.
-        if (drc1.tpNormal.touched != 0) {
+        // normally on its own. Gated on its own "Touchscreen" setting,
+        // independent of Controller Mode.
+        if (needsTouchMerge && drc1.tpNormal.touched != 0) {
             buffers[i].tpNormal = drc1.tpNormal;
             buffers[i].tpFiltered1 = drc1.tpFiltered1;
             buffers[i].tpFiltered2 = drc1.tpFiltered2;
@@ -1404,6 +1515,17 @@ WUPSConfigAPICallbackStatus ConfigMenuOpenedCallback(WUPSConfigCategoryHandle ro
     }
 
     if (WUPSConfigItemMultipleValues_AddToCategory(root,
+                                                    "dual_drc_controller_mapping_channel",
+                                                    "Controller Mapping",
+                                                    static_cast<int>(kDefaultControllerMappingChannel),
+                                                    static_cast<int>(sSyntheticControllerChannel),
+                                                    sControllerMappingValues,
+                                                    sizeof(sControllerMappingValues) / sizeof(sControllerMappingValues[0]),
+                                                    &ControllerMappingChanged) != WUPSCONFIG_API_RESULT_SUCCESS) {
+        return WUPSCONFIG_API_CALLBACK_RESULT_ERROR;
+    }
+
+    if (WUPSConfigItemMultipleValues_AddToCategory(root,
                                                     "dual_drc_video_feed_mode",
                                                     "Video Feed",
                                                     static_cast<int>(kDefaultVideoFeedMode),
@@ -1426,8 +1548,30 @@ WUPSConfigAPICallbackStatus ConfigMenuOpenedCallback(WUPSConfigCategoryHandle ro
     }
 
     if (WUPSConfigItemMultipleValues_AddToCategory(root,
+                                                    "dual_drc_touch_mode",
+                                                    "Touchscreen",
+                                                    static_cast<int>(kDefaultTouchMode),
+                                                    static_cast<int>(sTouchMode),
+                                                    sTouchModeValues,
+                                                    sizeof(sTouchModeValues) / sizeof(sTouchModeValues[0]),
+                                                    &TouchModeChanged) != WUPSCONFIG_API_RESULT_SUCCESS) {
+        return WUPSCONFIG_API_CALLBACK_RESULT_ERROR;
+    }
+
+    if (WUPSConfigItemMultipleValues_AddToCategory(root,
+                                                    "dual_drc_drc0_video_rate",
+                                                    "First GamePad Video Rate",
+                                                    static_cast<int>(kDefaultDrc0VideoRate),
+                                                    static_cast<int>(sDrc0VideoRate),
+                                                    sDrc1VideoRateValues,
+                                                    sizeof(sDrc1VideoRateValues) / sizeof(sDrc1VideoRateValues[0]),
+                                                    &Drc0VideoRateChanged) != WUPSCONFIG_API_RESULT_SUCCESS) {
+        return WUPSCONFIG_API_CALLBACK_RESULT_ERROR;
+    }
+
+    if (WUPSConfigItemMultipleValues_AddToCategory(root,
                                                     "dual_drc_drc1_video_rate",
-                                                    "DRC1 Video Rate",
+                                                    "Second GamePad Video Rate",
                                                     static_cast<int>(kDefaultDrc1VideoRate),
                                                     static_cast<int>(sDrc1VideoRate),
                                                     sDrc1VideoRateValues,
